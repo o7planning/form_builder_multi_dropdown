@@ -1,4 +1,4 @@
-part of '../multi_dropdown.dart';
+part of '../form_builder_multi_dropdown.dart';
 
 /// Controller for the multiselect dropdown.
 class MultiSelectController<T> extends ChangeNotifier {
@@ -78,24 +78,30 @@ class MultiSelectController<T> extends ChangeNotifier {
 
   /// clears all the selected items.
   void clearAll() {
-    _items = _items
-        .map(
-          (element) =>
-              element.selected ? element.copyWith(selected: false) : element,
-        )
-        .toList();
+    _items =
+        _items
+            .map(
+              (element) =>
+                  element.selected
+                      ? element.copyWith(selected: false)
+                      : element,
+            )
+            .toList();
     notifyListeners();
     _onSelectionChanged?.call(_selectedValues);
   }
 
   /// selects all the items.
   void selectAll() {
-    _items = _items
-        .map(
-          (element) =>
-              !element.selected ? element.copyWith(selected: true) : element,
-        )
-        .toList();
+    _items =
+        _items
+            .map(
+              (element) =>
+                  !element.selected
+                      ? element.copyWith(selected: true)
+                      : element,
+            )
+            .toList();
     notifyListeners();
     _onSelectionChanged?.call(_selectedValues);
   }
@@ -115,20 +121,24 @@ class MultiSelectController<T> extends ChangeNotifier {
 
   /// deselects all the items.
   void toggleWhere(bool Function(DropdownItem<T> item) predicate) {
-    _items = _items
-        .map(
-          (element) => predicate(element)
-              ? element.copyWith(selected: !element.selected)
-              : element,
-        )
-        .toList();
+    _items =
+        _items
+            .map(
+              (element) =>
+                  predicate(element)
+                      ? element.copyWith(selected: !element.selected)
+                      : element,
+            )
+            .toList();
     if (_searchQuery.isNotEmpty) {
-      _filteredItems = _items
-          .where(
-            (item) =>
-                item.label.toLowerCase().contains(_searchQuery.toLowerCase()),
-          )
-          .toList();
+      _filteredItems =
+          _items
+              .where(
+                (item) => item.label.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ),
+              )
+              .toList();
     }
     notifyListeners();
     _onSelectionChanged?.call(_selectedValues);
@@ -138,25 +148,29 @@ class MultiSelectController<T> extends ChangeNotifier {
   ///
   /// The [predicate] parameter is a function that takes a [DropdownItem] and returns a boolean.
   void selectWhere(bool Function(DropdownItem<T> item) predicate) {
-    _items = _items
-        .map(
-          (element) => predicate(element) && !element.selected
-              ? element.copyWith(selected: true)
-              : element,
-        )
-        .toList();
+    _items =
+        _items
+            .map(
+              (element) =>
+                  predicate(element) && !element.selected
+                      ? element.copyWith(selected: true)
+                      : element,
+            )
+            .toList();
     notifyListeners();
     _onSelectionChanged?.call(_selectedValues);
   }
 
   void _toggleOnly(DropdownItem<T> item) {
-    _items = _items
-        .map(
-          (element) => element == item
-              ? element.copyWith(selected: !element.selected)
-              : element.copyWith(selected: false),
-        )
-        .toList();
+    _items =
+        _items
+            .map(
+              (element) =>
+                  element == item
+                      ? element.copyWith(selected: !element.selected)
+                      : element.copyWith(selected: false),
+            )
+            .toList();
 
     notifyListeners();
     _onSelectionChanged?.call(_selectedValues);
@@ -166,13 +180,15 @@ class MultiSelectController<T> extends ChangeNotifier {
   ///
   /// The [predicate] parameter is a function that takes a [DropdownItem] and returns a boolean.
   void unselectWhere(bool Function(DropdownItem<T> item) predicate) {
-    _items = _items
-        .map(
-          (element) => predicate(element) && element.selected
-              ? element.copyWith(selected: false)
-              : element,
-        )
-        .toList();
+    _items =
+        _items
+            .map(
+              (element) =>
+                  predicate(element) && element.selected
+                      ? element.copyWith(selected: false)
+                      : element,
+            )
+            .toList();
     notifyListeners();
     _onSelectionChanged?.call(_selectedValues);
   }
@@ -181,13 +197,15 @@ class MultiSelectController<T> extends ChangeNotifier {
   ///
   /// The [predicate] parameter is a function that takes a [DropdownItem] and returns a boolean.
   void disableWhere(bool Function(DropdownItem<T> item) predicate) {
-    _items = _items
-        .map(
-          (element) => predicate(element) && !element.disabled
-              ? element.copyWith(disabled: true)
-              : element,
-        )
-        .toList();
+    _items =
+        _items
+            .map(
+              (element) =>
+                  predicate(element) && !element.disabled
+                      ? element.copyWith(disabled: true)
+                      : element,
+            )
+            .toList();
     notifyListeners();
     _onSelectionChanged?.call(_selectedValues);
   }
@@ -225,12 +243,14 @@ class MultiSelectController<T> extends ChangeNotifier {
     if (_searchQuery.isEmpty) {
       _filteredItems = List.from(_items);
     } else {
-      _filteredItems = _items
-          .where(
-            (item) =>
-                item.label.toLowerCase().contains(_searchQuery.toLowerCase()),
-          )
-          .toList();
+      _filteredItems =
+          _items
+              .where(
+                (item) => item.label.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ),
+              )
+              .toList();
     }
     _onSearchChanged?.call(query);
     notifyListeners();

@@ -1,4 +1,4 @@
-part of '../multi_dropdown.dart';
+part of '../form_builder_multi_dropdown.dart';
 
 /// Dropdown widget for the multiselect dropdown.
 ///
@@ -60,11 +60,13 @@ class _Dropdown<T> extends StatelessWidget {
 
   static const Map<ShortcutActivator, Intent> _webShortcuts =
       <ShortcutActivator, Intent>{
-    SingleActivator(LogicalKeyboardKey.arrowDown):
-        DirectionalFocusIntent(TraversalDirection.down),
-    SingleActivator(LogicalKeyboardKey.arrowUp):
-        DirectionalFocusIntent(TraversalDirection.up),
-  };
+        SingleActivator(LogicalKeyboardKey.arrowDown): DirectionalFocusIntent(
+          TraversalDirection.down,
+        ),
+        SingleActivator(LogicalKeyboardKey.arrowUp): DirectionalFocusIntent(
+          TraversalDirection.up,
+        ),
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -102,8 +104,8 @@ class _Dropdown<T> extends StatelessWidget {
                 Flexible(child: decoration.header!),
               Flexible(
                 child: ListView.separated(
-                  separatorBuilder: (_, __) =>
-                      itemSeparator ?? const SizedBox.shrink(),
+                  separatorBuilder:
+                      (_, __) => itemSeparator ?? const SizedBox.shrink(),
                   shrinkWrap: true,
                   itemCount: items.length,
                   itemBuilder: (_, int index) => _buildOption(index, theme),
@@ -140,18 +142,21 @@ class _Dropdown<T> extends StatelessWidget {
       return itemBuilder!(option, index, () => onItemTap(option));
     }
 
-    final disabledColor = dropdownItemDecoration.disabledBackgroundColor ??
+    final disabledColor =
+        dropdownItemDecoration.disabledBackgroundColor ??
         dropdownItemDecoration.backgroundColor?.withAlpha(100);
 
-    final tileColor = option.disabled
-        ? disabledColor
-        : option.selected
+    final tileColor =
+        option.disabled
+            ? disabledColor
+            : option.selected
             ? dropdownItemDecoration.selectedBackgroundColor
             : dropdownItemDecoration.backgroundColor;
 
-    final trailing = option.disabled
-        ? dropdownItemDecoration.disabledIcon
-        : option.selected
+    final trailing =
+        option.disabled
+            ? dropdownItemDecoration.disabledIcon
+            : option.selected
             ? dropdownItemDecoration.selectedIcon
             : null;
 
@@ -165,12 +170,14 @@ class _Dropdown<T> extends StatelessWidget {
         selected: option.selected,
         visualDensity: VisualDensity.adaptivePlatformDensity,
         focusColor: dropdownItemDecoration.backgroundColor?.withAlpha(100),
-        selectedColor: dropdownItemDecoration.selectedTextColor ??
+        selectedColor:
+            dropdownItemDecoration.selectedTextColor ??
             theme.colorScheme.onSurface,
         textColor:
             dropdownItemDecoration.textColor ?? theme.colorScheme.onSurface,
         tileColor: tileColor ?? Colors.transparent,
-        selectedTileColor: dropdownItemDecoration.selectedBackgroundColor ??
+        selectedTileColor:
+            dropdownItemDecoration.selectedBackgroundColor ??
             Colors.grey.shade200,
         onTap: () {
           if (option.disabled) return;
@@ -194,10 +201,7 @@ class _Dropdown<T> extends StatelessWidget {
 }
 
 class _SearchField extends StatelessWidget {
-  const _SearchField({
-    required this.decoration,
-    required this.onChanged,
-  });
+  const _SearchField({required this.decoration, required this.onChanged});
 
   final SearchFieldDecoration decoration;
 

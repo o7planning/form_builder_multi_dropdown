@@ -1,4 +1,4 @@
-part of '../multi_dropdown.dart';
+part of '../form_builder_multi_dropdown.dart';
 
 /// Controller for the future.
 ///

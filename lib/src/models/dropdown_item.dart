@@ -1,4 +1,4 @@
-part of '../multi_dropdown.dart';
+part of '../form_builder_multi_dropdown.dart';
 
 /// Represents an item in a dropdown menu.
 class DropdownItem<T> {

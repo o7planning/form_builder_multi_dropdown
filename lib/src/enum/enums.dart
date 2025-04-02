@@ -1,4 +1,4 @@
-part of '../multi_dropdown.dart';
+part of '../form_builder_multi_dropdown.dart';
 
 /// [RequestMethod]
 /// RequestMethod enum for the request method of the dropdown items.
@@ -21,5 +21,5 @@ enum RequestMethod {
   patch,
 
   /// delete request
-  delete
+  delete,
 }
