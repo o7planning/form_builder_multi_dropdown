@@ -661,9 +661,9 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
       List<T> currentItems = widget.items;
       //
       bool contains = _containsItems(
-        currentItems,
-        initialValue,
-        widget.getItemIdString,
+        list: currentItems,
+        sub: initialValue,
+        itemToIdString: widget.getItemIdString,
       );
       if (!contains) {
         assert(
@@ -738,11 +738,11 @@ bool _containItem<T>(
   return false;
 }
 
-bool _containsItems<T>(
-  List<T> list,
-  List<T>? sub,
-  String Function(T item) itemToIdString,
-) {
+bool _containsItems<T>({
+  required List<T> list,
+  required List<T>? sub,
+  required String Function(T item) itemToIdString,
+}) {
   if (sub == null || sub.isEmpty) {
     return true;
   }
@@ -760,6 +760,10 @@ bool _sameItems<T>({
   required List<T> list2,
   required String Function(T item) itemToIdString,
 }) {
-  return _containsItems(list1, list2, itemToIdString) &&
-      _containsItems(list2, list1, itemToIdString);
+  return _containsItems(
+        list: list1,
+        sub: list2,
+        itemToIdString: itemToIdString,
+      ) &&
+      _containsItems(list: list2, sub: list1, itemToIdString: itemToIdString);
 }
