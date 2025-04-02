@@ -15,13 +15,12 @@ part 'models/dropdown_item.dart';
 // part 'models/network_request.dart';
 part 'widgets/dropdown.dart';
 
-
 /// A multiselect dropdown widget.
 ///
 class FormBuilderMultiDropdown<T extends Object>
     extends FormBuilderFieldDecoration<List<T>> {
   /// The list of dropdown items.
-  final List<DropdownItem<T>> items;
+  final List<T> items;
 
   /// The selection type of the dropdown.
   final bool singleSelect;
@@ -75,6 +74,9 @@ class FormBuilderMultiDropdown<T extends Object>
   /// Note: This option requires the app to have a router, such as MaterialApp.router, in order to work properly.
   final bool closeOnBackButton;
 
+  String Function(T item) getItemIdString;
+  String Function(T item) getItemText;
+
   /// Creates a multiselect dropdown widget.
   ///
   /// The [items] are the list of dropdown items. It is required.
@@ -123,8 +125,9 @@ class FormBuilderMultiDropdown<T extends Object>
   /// The [closeOnBackButton] is whether to close the dropdown when the back button is pressed. The default value is false.
   /// Note: This option requires the app to have a router, such as MaterialApp.router, in order to work properly.
   ///
-  ///
   FormBuilderMultiDropdown({
+    required this.getItemIdString,
+    required this.getItemText,
     required super.name,
     required this.items,
     super.initialValue,
@@ -155,28 +158,33 @@ class FormBuilderMultiDropdown<T extends Object>
            // Selected Items:
            final List<T> fieldValue = field.value ?? [];
 
-           print("fieldValue: $fieldValue");
 
-           // final _items =
+
+           print("###############: items: $items");
+           print(">>>>>>>>>>>>>>> fieldValue: $fieldValue");
+
+           // List<DropdownItem<T>> dropdownItems =
            //     items
            //         .map(
-           //           (item) => DropdownItem(
-           //             label: itemToString(item),
+           //           (item) => DropdownItem<T>(
+           //             label: getItemText(item),
            //             value: item,
-           //             selected: _containItem<T>(
-           //               fieldValue,
+           //             selected: _containItem(
+           //               initialValue,
            //               item,
-           //               itemToIdString,
+           //               getItemIdString,
            //             ),
            //           ),
            //         )
            //         .toList();
+           // state._dropdownController._initialized = false;
+           // state._dropdownController.setItems( dropdownItems);
 
            return FormField<List<DropdownItem<T>>?>(
              key: state._formFieldKey,
-            // TODO: Tam rao` lai. ??????????????????????????????????????????????????????????????????????
-            // validator: validator ?? (_) => null,
-             autovalidateMode:  autovalidateMode,
+             // TODO: Tam rao` lai. ??????????????????????????????????????????????????????????????????????
+             // validator: validator ?? (_) => null,
+             autovalidateMode: autovalidateMode,
              initialValue: state._dropdownController.selectedItems,
              enabled: enabled,
              builder: (_) {
@@ -323,17 +331,41 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     }
 
     if (!_dropdownController._initialized) {
+      List<DropdownItem<T>> dropdownItems =
+          widget.items
+              .map(
+                (item) => DropdownItem<T>(
+                  label: widget.getItemText(item),
+                  value: item,
+                  selected: _containItem(
+                    widget.initialValue,
+                    item,
+                    widget.getItemIdString,
+                  ),
+                ),
+              )
+              .toList();
+      print("###############: dropdownItems: $dropdownItems");
+      //
       _dropdownController
         .._initialize()
-        ..setItems(widget.items);
+        ..setItems(dropdownItems);
 
-      print("_initialized: widget.items: ${widget.items}");
+
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print("??????????????????????????????????????????????????? addPostFrameCallback: ${widget.onSelectionChange}");
+
       _dropdownController
         ..addListener(_controllerListener)
-        .._setOnSelectionChange(widget.onSelectionChange)
+        .._setOnSelectionChange((List<T> selectedItems) {
+          print("??????????????????????????????????????????????????? @@@@@@@@@@@@@@@ ONCHAANGE: ${selectedItems}");
+          didChange(selectedItems);
+          if (widget.onSelectionChange != null) {
+            widget.onSelectionChange!(selectedItems);
+          }
+        })
         .._setOnSearchChange(widget.onSearchChange);
 
       // if close on back button is enabled, then add the listener
@@ -623,7 +655,6 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     });
   }
 
-
   @override
   void dispose() {
     _dropdownController.removeListener(_controllerListener);
@@ -640,9 +671,11 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     super.dispose();
   }
 
-
   @override
   void didUpdateWidget(covariant FormBuilderMultiDropdown<T> oldWidget) {
+    print("didUpdateWidget ^^^^^^^^^^^^ oldWidget: ${oldWidget.items}");
+    print("didUpdateWidget ^^^^^^^^^^^^ widget: ${widget.items}");
+
     // if the controller is changed, then dispose the old controller
     // and initialize the new controller.
     if (oldWidget.controller != widget.controller) {
@@ -653,6 +686,18 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
       _dropdownController = widget.controller ?? MultiSelectController<T>();
 
       _initializeController();
+    } else {
+      List<T> oldItems = oldWidget.items;
+      List<T> currentItems = widget.items;
+      bool isSame = _sameItems(oldItems, currentItems, widget.getItemIdString);
+      if (!isSame) {
+        _dropdownController
+          ..removeListener(_controllerListener)
+          ..dispose();
+
+        _dropdownController = widget.controller ?? MultiSelectController<T>();
+        _initializeController();
+      }
     }
 
     // if the focus node is changed, then dispose the old focus node
@@ -678,7 +723,7 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     //   );
     // });
 
-    _didUpdateWidget(currentValues: currentlyValues, oldValues: oldValues);
+    // _didUpdateWidget(currentValues: currentlyValues, oldValues: oldValues);
   }
 
   void _didUpdateWidget({
@@ -686,7 +731,7 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     required List<DropdownItem<T>> oldValues,
   }) {
     bool isSame = false;
-   // bool isSame = _sameItems(oldValues, currentValues, widget.itemToIdString);
+    // bool isSame = _sameItems(oldValues, currentValues, widget.itemToIdString);
 
     print(">>>>>>>> currentValues: $currentValues");
     print(">>>>>>>> oldValues: $oldValues");
@@ -717,7 +762,7 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     print("@@@>>>>>>>> value: $value");
     print("@@@>>>>>>>> initialValue: $initialValue");
 
-    bool contains= false;
+    bool contains = false;
     // bool contains = _containsItems(
     //   currentValues,
     //   initialValue,
@@ -763,17 +808,11 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
       // }
     }
   }
-
 }
-
-
-
-
-
 
 /// typedef for the dropdown item builder.
 typedef DropdownItemBuilder<T> =
-Widget Function(DropdownItem<T> item, int index, VoidCallback onTap);
+    Widget Function(DropdownItem<T> item, int index, VoidCallback onTap);
 
 /// typedef for the callback when the item is selected/de-selected/disabled.
 typedef OnSelectionChanged<T> = void Function(List<T> selectedItems);
@@ -786,8 +825,6 @@ typedef SelectedItemBuilder<T> = Widget Function(DropdownItem<T> item);
 
 /// typedef for the future request.
 typedef FutureRequest<T> = Future<List<DropdownItem<T>>> Function();
-
-
 
 bool _containItem<T>(
   List<T>? list,
