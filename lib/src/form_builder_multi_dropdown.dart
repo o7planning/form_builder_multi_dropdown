@@ -765,5 +765,9 @@ bool _sameItems<T>({
         sub: list2,
         itemToIdString: itemToIdString,
       ) &&
-      _containsItems(list: list2, sub: list1, itemToIdString: itemToIdString);
+      _containsItems(
+        list: list2, //
+        sub: list1,
+        itemToIdString: itemToIdString,
+      );
 }
