@@ -1,0 +1,262 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:multi_dropdown/multi_dropdown.dart';
+
+class FormBuilderMultiDropdown<T extends Object>
+    extends FormBuilderFieldDecoration<List<T>> {
+  final Icon? icon;
+  final List<T> items;
+  final String Function(T item) itemToString;
+  final String Function(T item) itemToIdString;
+  final ChipDecoration chipDecoration;
+  final FieldDecoration fieldDecoration;
+  final DropdownDecoration dropdownDecoration;
+  final DropdownItemDecoration dropdownItemDecoration;
+  final SearchFieldDecoration searchDecoration;
+  final bool searchEnabled;
+  final bool singleSelect;
+  final int maxSelections;
+  final Widget Function(DropdownItem<T> item, ChipDecoration chipDecoration,
+      MultiSelectController<T> controller)? selectedItemBuilder;
+
+  FormBuilderMultiDropdown({
+    super.key,
+    this.icon,
+    super.decoration,
+    super.validator,
+    required super.name,
+    required this.items,
+    super.initialValue,
+    this.selectedItemBuilder,
+    this.chipDecoration = const ChipDecoration(),
+    this.fieldDecoration = const FieldDecoration(),
+    this.dropdownDecoration = const DropdownDecoration(),
+    this.dropdownItemDecoration = const DropdownItemDecoration(),
+    this.searchDecoration = const SearchFieldDecoration(),
+    required this.itemToString,
+    required this.itemToIdString,
+    super.onChanged,
+    super.enabled,
+    this.searchEnabled = true,
+    this.singleSelect = false,
+    this.maxSelections = 0,
+  }) : super(
+          builder: (FormFieldState<List<T>?> field) {
+            final state = field as _FormBuilderMultiSelectChipFieldState<T>;
+            // Selected Items:
+            final List<T> fieldValue = field.value ?? [];
+
+            final _items = items
+                .map(
+                  (item) => DropdownItem(
+                    label: itemToString(item),
+                    value: item,
+                    selected: _containItem<T>(
+                      fieldValue,
+                      item,
+                      itemToIdString,
+                    ),
+                  ),
+                )
+                .toList();
+
+            return MultiDropdown<T>(
+              items: _items,
+              controller: state.controller,
+              enabled: enabled,
+              closeOnBackButton: true,
+              searchEnabled: searchEnabled,
+              singleSelect: singleSelect,
+              maxSelections: maxSelections,
+              chipDecoration: chipDecoration,
+              fieldDecoration: fieldDecoration,
+              dropdownDecoration: dropdownDecoration,
+              dropdownItemDecoration: dropdownItemDecoration,
+              searchDecoration: searchDecoration,
+              onSelectionChange: (selectedItems) {
+                if (state.mounted) {
+                  Future.delayed(Duration.zero, () {
+                    field.didChange(selectedItems);
+                  });
+                }
+              },
+              validator: (List<DropdownItem<T>>? value) {
+                List<T>? items = value?.map((e) => e.value).toList();
+                return validator == null ? null : validator!(items);
+              },
+              selectedItemBuilder: selectedItemBuilder == null
+                  ? null
+                  : (DropdownItem<T> item) {
+                      return selectedItemBuilder!(
+                          item, chipDecoration, state.controller);
+                    },
+            );
+          },
+        );
+
+  @override
+  FormBuilderFieldDecorationState<FormBuilderMultiDropdown<T>, List<T>>
+      createState() => _FormBuilderMultiSelectChipFieldState<T>();
+}
+
+class _FormBuilderMultiSelectChipFieldState<T extends Object>
+    extends FormBuilderFieldDecorationState<FormBuilderMultiDropdown<T>,
+        List<T>> {
+  MultiSelectController<T> controller = MultiSelectController<T>();
+
+  @override
+  void didUpdateWidget(covariant FormBuilderMultiDropdown<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldValues = oldWidget.items;
+    final currentlyValues = widget.items;
+
+    // Future.delayed(Duration.zero, () {
+    //   _didUpdateWidget(
+    //     currentValues: currentlyValues,
+    //     oldValues: oldValues,
+    //   );
+    // });
+
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      _didUpdateWidget(
+        currentValues: currentlyValues,
+        oldValues: oldValues,
+      );
+    });
+  }
+
+  void _didUpdateWidget({
+    required List<T> currentValues,
+    required List<T> oldValues,
+  }) {
+    bool isSame = _sameItems(
+      oldValues,
+      currentValues,
+      widget.itemToIdString,
+    );
+
+    print(">>>>>>>> currentValues: $currentValues");
+    print(">>>>>>>> oldValues: $oldValues");
+    print(">>>>>>>> value: $value");
+    print("isSame: $isSame");
+
+    if (!isSame) {
+      print(">>>>>>>> oldValues: $oldValues");
+      print(">>>>>>>>>> currentlyValues: $currentValues");
+      controller.setItems(
+        currentValues
+            .map(
+              (item) =>
+              DropdownItem(
+                label: widget.itemToString(item),
+                value: item,
+                selected: _containItem<T>(
+                  value, // selected items (of FormBuilderField)
+                  item,
+                  widget.itemToIdString,
+                ),
+              ),
+        )
+            .toList(),
+      );
+    }
+
+
+
+      print("@@@>>>>>>>> initialValue: $initialValue");
+      print("@@@>>>>>>>> value: $value");
+      print("@@@>>>>>>>> initialValue: $initialValue");
+
+      bool contains = _containsItems(
+        currentValues,
+        initialValue,
+        widget.itemToIdString,
+      );
+      print("@@@@@@@@@@@@@@@@@@@ initialValue: $initialValue. contains = $contains");
+
+      if (!contains) {
+        print("**** currentlyValues: $currentValues");
+        print("**** initialValue: $initialValue");
+        assert(
+          contains,
+          'The initialValue [$initialValue] is not in the list of items or is not null or empty. '
+          'Please provide one of the items as the initialValue or update your initial value. '
+          'By default, will apply [null] to field value',
+        );
+        setValue(null);
+        print("@3");
+      } else {
+        print("@4.0 setValue: $initialValue");
+
+        // setValue(initialValue);
+        bool sameSelected = _sameItems(
+          controller.selectedItems.map((w) => w.value).toList(),
+          initialValue ?? <T>[],
+          widget.itemToIdString,
+        );
+        print("@4.1 initialValue: $initialValue, controller.selectedItems: ${controller.selectedItems}, sameSelected: $sameSelected");
+        if (!sameSelected) {
+          controller.selectWhere(
+            (item) {
+
+              bool con = _containItem(
+                initialValue,
+                item.value,
+                widget.itemToIdString,
+              );
+              print("@4.2 item: $item, _containItem: $con");
+              return con;
+            }
+          );
+        }
+      }
+
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+}
+
+bool _containItem<T>(
+  List<T>? list,
+  T item,
+  String Function(T item) itemToIdString,
+) {
+  String itemId = itemToIdString(item);
+  for (var it in list ?? []) {
+    if (itemToIdString(it) == itemId) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool _containsItems<T>(
+  List<T> list,
+  List<T>? sub,
+  String Function(T item) itemToIdString,
+) {
+  if (sub == null || sub.isEmpty) {
+    return true;
+  }
+  for (T item in sub) {
+    bool contain = _containItem(list, item, itemToIdString);
+    if (!contain) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool _sameItems<T>(
+  List<T> list1,
+  List<T> list2,
+  String Function(T item) itemToIdString,
+) {
+  return _containsItems(list1, list2, itemToIdString) &&
+      _containsItems(list2, list1, itemToIdString);
+}
