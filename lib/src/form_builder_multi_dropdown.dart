@@ -158,27 +158,7 @@ class FormBuilderMultiDropdown<T extends Object>
            // Selected Items:
            final List<T> fieldValue = field.value ?? [];
 
-
-
-           print("###############: items: $items");
-           print(">>>>>>>>>>>>>>> fieldValue: $fieldValue");
-
-           // List<DropdownItem<T>> dropdownItems =
-           //     items
-           //         .map(
-           //           (item) => DropdownItem<T>(
-           //             label: getItemText(item),
-           //             value: item,
-           //             selected: _containItem(
-           //               initialValue,
-           //               item,
-           //               getItemIdString,
-           //             ),
-           //           ),
-           //         )
-           //         .toList();
-           // state._dropdownController._initialized = false;
-           // state._dropdownController.setItems( dropdownItems);
+           //
 
            return FormField<List<DropdownItem<T>>?>(
              key: state._formFieldKey,
@@ -337,30 +317,23 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
                 (item) => DropdownItem<T>(
                   label: widget.getItemText(item),
                   value: item,
-                  selected: _containItem(
-                    widget.initialValue,
-                    item,
-                    widget.getItemIdString,
-                  ),
+                  selected: _containItem(value, item, widget.getItemIdString),
                 ),
               )
               .toList();
-      print("###############: dropdownItems: $dropdownItems");
       //
       _dropdownController
         .._initialize()
         ..setItems(dropdownItems);
-
-
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print("??????????????????????????????????????????????????? addPostFrameCallback: ${widget.onSelectionChange}");
-
       _dropdownController
         ..addListener(_controllerListener)
         .._setOnSelectionChange((List<T> selectedItems) {
-          print("??????????????????????????????????????????????????? @@@@@@@@@@@@@@@ ONCHAANGE: ${selectedItems}");
+          //
+          // IMPORTANT: didChange (FormBuilder lib).
+          //
           didChange(selectedItems);
           if (widget.onSelectionChange != null) {
             widget.onSelectionChange!(selectedItems);
@@ -673,9 +646,6 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
 
   @override
   void didUpdateWidget(covariant FormBuilderMultiDropdown<T> oldWidget) {
-    print("didUpdateWidget ^^^^^^^^^^^^ oldWidget: ${oldWidget.items}");
-    print("didUpdateWidget ^^^^^^^^^^^^ widget: ${widget.items}");
-
     // if the controller is changed, then dispose the old controller
     // and initialize the new controller.
     if (oldWidget.controller != widget.controller) {
@@ -689,8 +659,35 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     } else {
       List<T> oldItems = oldWidget.items;
       List<T> currentItems = widget.items;
-      bool isSame = _sameItems(oldItems, currentItems, widget.getItemIdString);
-      if (!isSame) {
+      //
+      bool contains = _containsItems(
+        currentItems,
+        initialValue,
+        widget.getItemIdString,
+      );
+      if (!contains) {
+        assert(
+          contains,
+          'The initialValue [$initialValue] is not in the list of items or is not null or empty. '
+          'Please provide one of the items as the initialValue or update your initial value. '
+          'By default, will apply [null] to field value',
+        );
+      }
+      //
+      bool isSameItems = _sameItems(
+        list1: oldItems,
+        list2: currentItems,
+        itemToIdString: widget.getItemIdString,
+      );
+      //
+      List<T> oldSelectedItems = _dropdownController._selectedValues;
+      bool isSameSelected = _sameItems(
+        list1: oldSelectedItems,
+        list2: value ?? <T>[],
+        itemToIdString: widget.getItemIdString,
+      );
+      //
+      if (!isSameItems || !isSameSelected) {
         _dropdownController
           ..removeListener(_controllerListener)
           ..dispose();
@@ -708,105 +705,6 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     }
 
     super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void didUpdateWidget1(covariant FormBuilderMultiDropdown<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final oldValues = oldWidget.items;
-    final currentlyValues = widget.items;
-
-    // Future.delayed(Duration.zero, () {
-    //   _didUpdateWidget(
-    //     currentValues: currentlyValues,
-    //     oldValues: oldValues,
-    //   );
-    // });
-
-    // _didUpdateWidget(currentValues: currentlyValues, oldValues: oldValues);
-  }
-
-  void _didUpdateWidget({
-    required List<DropdownItem<T>> currentValues,
-    required List<DropdownItem<T>> oldValues,
-  }) {
-    bool isSame = false;
-    // bool isSame = _sameItems(oldValues, currentValues, widget.itemToIdString);
-
-    print(">>>>>>>> currentValues: $currentValues");
-    print(">>>>>>>> oldValues: $oldValues");
-    print(">>>>>>>> value: $value");
-    print("isSame: $isSame");
-
-    if (!isSame) {
-      print(">>>>>>>> oldValues: $oldValues");
-      print(">>>>>>>>>> currentlyValues: $currentValues");
-      // controller.setItems(
-      //   currentValues
-      //       .map(
-      //         (item) => DropdownItem(
-      //           label: widget.itemToString(item),
-      //           value: item,
-      //           selected: _containItem<T>(
-      //             value, // selected items (of FormBuilderField)
-      //             item,
-      //             widget.itemToIdString,
-      //           ),
-      //         ),
-      //       )
-      //       .toList(),
-      // );
-    }
-
-    print("@@@>>>>>>>> initialValue: $initialValue");
-    print("@@@>>>>>>>> value: $value");
-    print("@@@>>>>>>>> initialValue: $initialValue");
-
-    bool contains = false;
-    // bool contains = _containsItems(
-    //   currentValues,
-    //   initialValue,
-    //   widget.itemToIdString,
-    // );
-    print(
-      "@@@@@@@@@@@@@@@@@@@ initialValue: $initialValue. contains = $contains",
-    );
-
-    if (!contains) {
-      print("**** currentlyValues: $currentValues");
-      print("**** initialValue: $initialValue");
-      assert(
-        contains,
-        'The initialValue [$initialValue] is not in the list of items or is not null or empty. '
-        'Please provide one of the items as the initialValue or update your initial value. '
-        'By default, will apply [null] to field value',
-      );
-      setValue(null);
-      print("@3");
-    } else {
-      print("@4.0 setValue: $initialValue");
-
-      // setValue(initialValue);
-      // bool sameSelected = _sameItems(
-      //   controller.selectedItems.map((w) => w.value).toList(),
-      //   initialValue ?? <T>[],
-      //   widget.itemToIdString,
-      // );
-      // print(
-      //   "@4.1 initialValue: $initialValue, controller.selectedItems: ${controller.selectedItems}, sameSelected: $sameSelected",
-      // );
-      // if (!sameSelected) {
-      //   controller.selectWhere((item) {
-      //     bool con = _containItem(
-      //       initialValue,
-      //       item.value,
-      //       widget.itemToIdString,
-      //     );
-      //     print("@4.2 item: $item, _containItem: $con");
-      //     return con;
-      //   });
-      // }
-    }
   }
 }
 
@@ -857,11 +755,11 @@ bool _containsItems<T>(
   return true;
 }
 
-bool _sameItems<T>(
-  List<T> list1,
-  List<T> list2,
-  String Function(T item) itemToIdString,
-) {
+bool _sameItems<T>({
+  required List<T> list1,
+  required List<T> list2,
+  required String Function(T item) itemToIdString,
+}) {
   return _containsItems(list1, list2, itemToIdString) &&
       _containsItems(list2, list1, itemToIdString);
 }
