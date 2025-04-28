@@ -13,12 +13,12 @@ class _Dropdown<T> extends StatelessWidget {
     required this.maxSelections,
     required this.items,
     required this.onItemTap,
-    Key? key,
+    super.key,
     this.onSearchChange,
     this.itemBuilder,
     this.itemSeparator,
     this.singleSelect = false,
-  }) : super(key: key);
+  });
 
   /// The decoration of the dropdown.
   final DropdownDecoration decoration;
