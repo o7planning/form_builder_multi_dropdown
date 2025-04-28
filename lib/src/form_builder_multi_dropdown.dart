@@ -74,8 +74,8 @@ class FormBuilderMultiDropdown<T extends Object>
   /// Note: This option requires the app to have a router, such as MaterialApp.router, in order to work properly.
   final bool closeOnBackButton;
 
-  String Function(T item) getItemIdString;
-  String Function(T item) getItemText;
+  final String Function(T item) getItemIdString;
+  final String Function(T item) getItemText;
 
   /// Creates a multiselect dropdown widget.
   ///
@@ -126,6 +126,7 @@ class FormBuilderMultiDropdown<T extends Object>
   /// Note: This option requires the app to have a router, such as MaterialApp.router, in order to work properly.
   ///
   FormBuilderMultiDropdown({
+    super.key,
     required this.getItemIdString,
     required this.getItemText,
     required super.name,
@@ -150,7 +151,6 @@ class FormBuilderMultiDropdown<T extends Object>
     this.onSelectionChange,
     this.onSearchChange,
     this.closeOnBackButton = false,
-    Key? key,
   }) : future = null,
        super(
          builder: (FormFieldState<List<T>?> field) {
