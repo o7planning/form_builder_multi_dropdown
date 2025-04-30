@@ -17,10 +17,10 @@ part 'widgets/dropdown.dart';
 
 /// A multiselect dropdown widget.
 ///
-class FormBuilderMultiDropdown<T extends Object>
-    extends FormBuilderFieldDecoration<List<T>> {
+class FormBuilderMultiDropdown<ID extends Object, ITEM extends Object>
+    extends FormBuilderFieldDecoration<List<ITEM>> {
   /// The list of dropdown items.
-  final List<T> items;
+  final List<ITEM> items;
 
   /// The selection type of the dropdown.
   final bool singleSelect;
@@ -41,16 +41,16 @@ class FormBuilderMultiDropdown<T extends Object>
   final DropdownItemDecoration dropdownItemDecoration;
 
   /// The builder for the dropdown items.
-  final DropdownItemBuilder<T>? itemBuilder;
+  final DropdownItemBuilder<ITEM>? itemBuilder;
 
   /// The builder for the selected items.
-  final SelectedItemBuilder<T>? selectedItemBuilder;
+  final SelectedItemBuilder<ITEM>? selectedItemBuilder;
 
   /// The separator between the dropdown items.
   final Widget? itemSeparator;
 
   /// The controller for the dropdown.
-  final MultiSelectController<T>? controller;
+  final MultiSelectController<ITEM>? controller;
 
   /// The maximum number of selections allowed.
   final int maxSelections;
@@ -59,12 +59,12 @@ class FormBuilderMultiDropdown<T extends Object>
   final bool searchEnabled;
 
   /// The future request for the dropdown items.
-  final FutureRequest<T>? future;
+  final FutureRequest<ITEM>? future;
 
   /// The callback when the item is changed.
   ///
   /// This callback is called when any item is selected or unselected.
-  final OnSelectionChanged<T>? onSelectionChange;
+  final OnSelectionChanged<ITEM>? onSelectionChange;
 
   /// The callback when the search field value changes.
   final OnSearchChanged? onSearchChange;
@@ -74,8 +74,8 @@ class FormBuilderMultiDropdown<T extends Object>
   /// Note: This option requires the app to have a router, such as MaterialApp.router, in order to work properly.
   final bool closeOnBackButton;
 
-  final String Function(T item) getItemIdString;
-  final String Function(T item) getItemText;
+  final ID Function(ITEM item) getItemId;
+  final String Function(ITEM item) getItemText;
 
   /// Creates a multiselect dropdown widget.
   ///
@@ -127,7 +127,7 @@ class FormBuilderMultiDropdown<T extends Object>
   ///
   FormBuilderMultiDropdown({
     super.key,
-    required this.getItemIdString,
+    required this.getItemId,
     required this.getItemText,
     required super.name,
     required this.items,
@@ -153,10 +153,11 @@ class FormBuilderMultiDropdown<T extends Object>
     this.closeOnBackButton = false,
   }) : future = null,
        super(
-         builder: (FormFieldState<List<T>?> field) {
-           final state = field as _FormBuilderMultiSelectChipFieldState<T>;
+         builder: (FormFieldState<List<ITEM>?> field) {
+           final state =
+               field as _FormBuilderMultiSelectChipFieldState<ID, ITEM>;
 
-           return FormField<List<DropdownItem<T>>?>(
+           return FormField<List<DropdownItem<ITEM>>?>(
              key: state._formFieldKey,
              // TODO: Tam rao` lai. ?????????????????????
              // validator: validator ?? (_) => null,
@@ -210,7 +211,7 @@ class FormBuilderMultiDropdown<T extends Object>
                                  ? Offset.zero
                                  : Offset(0, dropdownDecoration.marginTop),
                          child: RepaintBoundary(
-                           child: _Dropdown<T>(
+                           child: _Dropdown<ITEM>(
                              decoration: dropdownDecoration,
                              onItemTap: state._handleDropdownItemTap,
                              width: renderBoxSize.width,
@@ -265,19 +266,28 @@ class FormBuilderMultiDropdown<T extends Object>
        );
 
   @override
-  FormBuilderFieldDecorationState<FormBuilderMultiDropdown<T>, List<T>>
-  createState() => _FormBuilderMultiSelectChipFieldState<T>();
+  FormBuilderFieldDecorationState<
+    FormBuilderMultiDropdown<ID, ITEM>,
+    List<ITEM>
+  >
+  createState() => _FormBuilderMultiSelectChipFieldState<ID, ITEM>();
 }
 
-class _FormBuilderMultiSelectChipFieldState<T extends Object>
+class _FormBuilderMultiSelectChipFieldState<
+  ID extends Object,
+  ITEM extends Object
+>
     extends
-        FormBuilderFieldDecorationState<FormBuilderMultiDropdown<T>, List<T>> {
+        FormBuilderFieldDecorationState<
+          FormBuilderMultiDropdown<ID, ITEM>,
+          List<ITEM>
+        > {
   final LayerLink _layerLink = LayerLink();
 
   final OverlayPortalController _portalController = OverlayPortalController();
 
-  late MultiSelectController<T> _dropdownController =
-      widget.controller ?? MultiSelectController<T>();
+  late MultiSelectController<ITEM> _dropdownController =
+      widget.controller ?? MultiSelectController<ITEM>();
   final _FutureController _loadingController = _FutureController();
 
   late FocusNode _focusNode = widget.focusNode ?? FocusNode();
@@ -288,7 +298,7 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
   ]);
 
   // the global key for the form field state to update the form field state when the controller changes
-  final GlobalKey<FormFieldState<List<DropdownItem<T>>?>> _formFieldKey =
+  final GlobalKey<FormFieldState<List<DropdownItem<ITEM>>?>> _formFieldKey =
       GlobalKey();
 
   @override
@@ -307,13 +317,13 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     }
 
     if (!_dropdownController._initialized) {
-      List<DropdownItem<T>> dropdownItems =
+      List<DropdownItem<ITEM>> dropdownItems =
           widget.items
               .map(
-                (item) => DropdownItem<T>(
+                (item) => DropdownItem<ITEM>(
                   label: widget.getItemText(item),
                   value: item,
-                  selected: _containItem(value, item, widget.getItemIdString),
+                  selected: _containItem(value, item, widget.getItemId),
                 ),
               )
               .toList();
@@ -326,7 +336,7 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _dropdownController
         ..addListener(_controllerListener)
-        .._setOnSelectionChange((List<T> selectedItems) {
+        .._setOnSelectionChange((List<ITEM> selectedItems) {
           //
           // IMPORTANT: didChange (FormBuilder lib).
           //
@@ -399,7 +409,7 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
     }
   }
 
-  void _handleDropdownItemTap(DropdownItem<T> item) {
+  void _handleDropdownItemTap(DropdownItem<ITEM> item) {
     if (widget.singleSelect) {
       _dropdownController._toggleOnly(item);
     } else {
@@ -506,7 +516,7 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
   }
 
   /// Build the selected items for the dropdown.
-  Widget _buildSelectedItems(List<DropdownItem<T>> selectedOptions) {
+  Widget _buildSelectedItems(List<DropdownItem<ITEM>> selectedOptions) {
     final chipDecoration = widget.chipDecoration;
 
     if (widget.selectedItemBuilder != null) {
@@ -641,7 +651,7 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
   }
 
   @override
-  void didUpdateWidget(covariant FormBuilderMultiDropdown<T> oldWidget) {
+  void didUpdateWidget(covariant FormBuilderMultiDropdown<ID, ITEM> oldWidget) {
     // if the controller is changed, then dispose the old controller
     // and initialize the new controller.
     if (oldWidget.controller != widget.controller) {
@@ -649,17 +659,17 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
         ..removeListener(_controllerListener)
         ..dispose();
 
-      _dropdownController = widget.controller ?? MultiSelectController<T>();
+      _dropdownController = widget.controller ?? MultiSelectController<ITEM>();
 
       _initializeController();
     } else {
-      List<T> oldItems = oldWidget.items;
-      List<T> currentItems = widget.items;
+      List<ITEM> oldItems = oldWidget.items;
+      List<ITEM> currentItems = widget.items;
       //
       bool contains = _containsItems(
         list: currentItems,
         sub: initialValue,
-        itemToIdString: widget.getItemIdString,
+        itemToId: widget.getItemId,
       );
       if (!contains) {
         assert(
@@ -673,14 +683,14 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
       bool isSameItems = _sameItems(
         list1: oldItems,
         list2: currentItems,
-        itemToIdString: widget.getItemIdString,
+        itemToId: widget.getItemId,
       );
       //
-      List<T> oldSelectedItems = _dropdownController._selectedValues;
+      List<ITEM> oldSelectedItems = _dropdownController._selectedValues;
       bool isSameSelected = _sameItems(
         list1: oldSelectedItems,
-        list2: value ?? <T>[],
-        itemToIdString: widget.getItemIdString,
+        list2: value ?? <ITEM>[],
+        itemToId: widget.getItemId,
       );
       //
       if (!isSameItems || !isSameSelected) {
@@ -688,7 +698,8 @@ class _FormBuilderMultiSelectChipFieldState<T extends Object>
           ..removeListener(_controllerListener)
           ..dispose();
 
-        _dropdownController = widget.controller ?? MultiSelectController<T>();
+        _dropdownController =
+            widget.controller ?? MultiSelectController<ITEM>();
         _initializeController();
       }
     }
@@ -720,30 +731,26 @@ typedef SelectedItemBuilder<T> = Widget Function(DropdownItem<T> item);
 /// typedef for the future request.
 typedef FutureRequest<T> = Future<List<DropdownItem<T>>> Function();
 
-bool _containItem<T>(
-  List<T>? list,
-  T item,
-  String Function(T item) itemToIdString,
-) {
-  String itemId = itemToIdString(item);
+bool _containItem<ID, T>(List<T>? list, T item, ID Function(T item) itemToId) {
+  ID itemId = itemToId(item);
   for (var it in list ?? []) {
-    if (itemToIdString(it) == itemId) {
+    if (itemToId(it) == itemId) {
       return true;
     }
   }
   return false;
 }
 
-bool _containsItems<T>({
+bool _containsItems<ID, T>({
   required List<T> list,
   required List<T>? sub,
-  required String Function(T item) itemToIdString,
+  required ID Function(T item) itemToId,
 }) {
   if (sub == null || sub.isEmpty) {
     return true;
   }
   for (T item in sub) {
-    bool contain = _containItem(list, item, itemToIdString);
+    bool contain = _containItem(list, item, itemToId);
     if (!contain) {
       return false;
     }
@@ -751,19 +758,15 @@ bool _containsItems<T>({
   return true;
 }
 
-bool _sameItems<T>({
+bool _sameItems<ID, T>({
   required List<T> list1,
   required List<T> list2,
-  required String Function(T item) itemToIdString,
+  required ID Function(T item) itemToId,
 }) {
-  return _containsItems(
-        list: list1,
-        sub: list2,
-        itemToIdString: itemToIdString,
-      ) &&
+  return _containsItems(list: list1, sub: list2, itemToId: itemToId) &&
       _containsItems(
         list: list2, //
         sub: list1,
-        itemToIdString: itemToIdString,
+        itemToId: itemToId,
       );
 }
