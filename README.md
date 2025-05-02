@@ -12,7 +12,8 @@ The source code of **FormBuilderMultiDropdown** is a modification of **multi_dro
 ## Usage:
 
 ```dart
-FormBuilderMultiDropdown<String> (
+// <ID, ITEM> = <String, String>
+FormBuilderMultiDropdown<String, String> (
   name: "language",
   items: ["Java", "Javascript", "Swift"],
   initialValue: ["Java", "Swift"],
