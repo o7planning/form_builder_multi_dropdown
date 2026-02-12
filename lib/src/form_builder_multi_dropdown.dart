@@ -74,7 +74,6 @@ class FormBuilderMultiDropdown<ID extends Object, ITEM extends Object>
   /// Note: This option requires the app to have a router, such as MaterialApp.router, in order to work properly.
   final bool closeOnBackButton;
 
-  final ID Function(ITEM item) getItemId;
   final String Function(ITEM item) getItemText;
 
   /// Creates a multiselect dropdown widget.
@@ -127,7 +126,6 @@ class FormBuilderMultiDropdown<ID extends Object, ITEM extends Object>
   ///
   FormBuilderMultiDropdown({
     super.key,
-    required this.getItemId,
     required this.getItemText,
     required super.name,
     required this.items,
@@ -323,7 +321,7 @@ class _FormBuilderMultiSelectChipFieldState<
                 (item) => DropdownItem<ITEM>(
                   label: widget.getItemText(item),
                   value: item,
-                  selected: _containItem(value, item, widget.getItemId),
+                  selected: _containItem(value, item),
                 ),
               )
               .toList();
@@ -666,11 +664,7 @@ class _FormBuilderMultiSelectChipFieldState<
       List<ITEM> oldItems = oldWidget.items;
       List<ITEM> currentItems = widget.items;
       //
-      bool contains = _containsItems(
-        list: currentItems,
-        sub: initialValue,
-        itemToId: widget.getItemId,
-      );
+      bool contains = _containsItems(list: currentItems, sub: initialValue);
       if (!contains) {
         assert(
           contains,
@@ -680,17 +674,12 @@ class _FormBuilderMultiSelectChipFieldState<
         );
       }
       //
-      bool isSameItems = _sameItems(
-        list1: oldItems,
-        list2: currentItems,
-        itemToId: widget.getItemId,
-      );
+      bool isSameItems = _sameItems(list1: oldItems, list2: currentItems);
       //
       List<ITEM> oldSelectedItems = _dropdownController._selectedValues;
       bool isSameSelected = _sameItems(
         list1: oldSelectedItems,
         list2: value ?? <ITEM>[],
-        itemToId: widget.getItemId,
       );
       //
       if (!isSameItems || !isSameSelected) {
@@ -731,26 +720,19 @@ typedef SelectedItemBuilder<T> = Widget Function(DropdownItem<T> item);
 /// typedef for the future request.
 typedef FutureRequest<T> = Future<List<DropdownItem<T>>> Function();
 
-bool _containItem<ID, T>(List<T>? list, T item, ID Function(T item) itemToId) {
-  ID itemId = itemToId(item);
-  for (var it in list ?? []) {
-    if (itemToId(it) == itemId) {
-      return true;
-    }
+bool _containItem<ID, T>(List<T>? list, T item) {
+  if (list == null) {
+    return false;
   }
-  return false;
+  return list.contains(item);
 }
 
-bool _containsItems<ID, T>({
-  required List<T> list,
-  required List<T>? sub,
-  required ID Function(T item) itemToId,
-}) {
+bool _containsItems<ID, T>({required List<T> list, required List<T>? sub}) {
   if (sub == null || sub.isEmpty) {
     return true;
   }
   for (T item in sub) {
-    bool contain = _containItem(list, item, itemToId);
+    bool contain = _containItem(list, item);
     if (!contain) {
       return false;
     }
@@ -758,15 +740,7 @@ bool _containsItems<ID, T>({
   return true;
 }
 
-bool _sameItems<ID, T>({
-  required List<T> list1,
-  required List<T> list2,
-  required ID Function(T item) itemToId,
-}) {
-  return _containsItems(list: list1, sub: list2, itemToId: itemToId) &&
-      _containsItems(
-        list: list2, //
-        sub: list1,
-        itemToId: itemToId,
-      );
+bool _sameItems<ID, T>({required List<T> list1, required List<T> list2}) {
+  return _containsItems(list: list1, sub: list2) &&
+      _containsItems(list: list2, sub: list1);
 }
