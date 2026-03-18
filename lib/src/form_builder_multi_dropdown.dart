@@ -17,7 +17,7 @@ part 'widgets/dropdown.dart';
 
 /// A multiselect dropdown widget.
 ///
-class FormBuilderMultiDropdown<ID extends Object, ITEM extends Object>
+class FormBuilderMultiDropdown<ITEM extends Object>
     extends FormBuilderFieldDecoration<List<ITEM>> {
   /// The list of dropdown items.
   final List<ITEM> items;
@@ -152,8 +152,7 @@ class FormBuilderMultiDropdown<ID extends Object, ITEM extends Object>
   }) : future = null,
        super(
          builder: (FormFieldState<List<ITEM>?> field) {
-           final state =
-               field as _FormBuilderMultiSelectChipFieldState<ID, ITEM>;
+           final state = field as _FormBuilderMultiSelectChipFieldState<ITEM>;
 
            return FormField<List<DropdownItem<ITEM>>?>(
              key: state._formFieldKey,
@@ -264,20 +263,14 @@ class FormBuilderMultiDropdown<ID extends Object, ITEM extends Object>
        );
 
   @override
-  FormBuilderFieldDecorationState<
-    FormBuilderMultiDropdown<ID, ITEM>,
-    List<ITEM>
-  >
-  createState() => _FormBuilderMultiSelectChipFieldState<ID, ITEM>();
+  FormBuilderFieldDecorationState<FormBuilderMultiDropdown<ITEM>, List<ITEM>>
+  createState() => _FormBuilderMultiSelectChipFieldState<ITEM>();
 }
 
-class _FormBuilderMultiSelectChipFieldState<
-  ID extends Object,
-  ITEM extends Object
->
+class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
     extends
         FormBuilderFieldDecorationState<
-          FormBuilderMultiDropdown<ID, ITEM>,
+          FormBuilderMultiDropdown<ITEM>,
           List<ITEM>
         > {
   final LayerLink _layerLink = LayerLink();
@@ -649,7 +642,7 @@ class _FormBuilderMultiSelectChipFieldState<
   }
 
   @override
-  void didUpdateWidget(covariant FormBuilderMultiDropdown<ID, ITEM> oldWidget) {
+  void didUpdateWidget(covariant FormBuilderMultiDropdown<ITEM> oldWidget) {
     // if the controller is changed, then dispose the old controller
     // and initialize the new controller.
     if (oldWidget.controller != widget.controller) {
