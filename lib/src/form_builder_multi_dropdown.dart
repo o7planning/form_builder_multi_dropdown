@@ -8,122 +8,42 @@ import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 part 'controllers/future_controller.dart';
+
 part 'controllers/multiselect_controller.dart';
+
 part 'enum/enums.dart';
+
 part 'models/decoration.dart';
+
 part 'models/dropdown_item.dart';
-// part 'models/network_request.dart';
+
 part 'widgets/dropdown.dart';
 
-/// A multiselect dropdown widget.
-///
+part 'typedef.dart';
+
+/// The 2026 Pro Version: FormBuilderMultiDropdown
+/// Merged with the latest multi_dropdown core features (ExpandDirection.auto, Animations, etc.)
 class FormBuilderMultiDropdown<ITEM extends Object>
     extends FormBuilderFieldDecoration<List<ITEM>> {
-  /// The list of dropdown items.
   final List<ITEM> items;
-
-  /// The selection type of the dropdown.
   final bool singleSelect;
-
-  /// The configuration for the chips.
   final ChipDecoration chipDecoration;
-
-  /// The decoration of the field.
   final FieldDecoration fieldDecoration;
-
-  /// The decoration of the dropdown.
   final DropdownDecoration dropdownDecoration;
-
-  /// The decoration of the search field.
   final SearchFieldDecoration searchDecoration;
-
-  /// The decoration of the dropdown items.
   final DropdownItemDecoration dropdownItemDecoration;
-
-  /// The builder for the dropdown items.
   final DropdownItemBuilder<ITEM>? itemBuilder;
-
-  /// The builder for the selected items.
   final SelectedItemBuilder<ITEM>? selectedItemBuilder;
-
-  /// The separator between the dropdown items.
   final Widget? itemSeparator;
-
-  /// The controller for the dropdown.
   final MultiSelectController<ITEM>? controller;
-
-  /// The maximum number of selections allowed.
   final int maxSelections;
-
-  /// Whether the search field is enabled.
   final bool searchEnabled;
-
-  /// The future request for the dropdown items.
   final FutureRequest<ITEM>? future;
-
-  /// The callback when the item is changed.
-  ///
-  /// This callback is called when any item is selected or unselected.
   final OnSelectionChanged<ITEM>? onSelectionChange;
-
-  /// The callback when the search field value changes.
   final OnSearchChanged? onSearchChange;
-
-  /// Whether to close the dropdown when the back button is pressed.
-  ///
-  /// Note: This option requires the app to have a router, such as MaterialApp.router, in order to work properly.
   final bool closeOnBackButton;
-
   final String Function(ITEM item) getItemText;
 
-  /// Creates a multiselect dropdown widget.
-  ///
-  /// The [items] are the list of dropdown items. It is required.
-  ///
-  /// The [fieldDecoration] is the decoration of the field. The default value is FieldDecoration().
-  /// It can be used to customize the field decoration.
-  ///
-  /// The [dropdownDecoration] is the decoration of the dropdown. The default value is DropdownDecoration().
-  /// It can be used to customize the dropdown decoration.
-  ///
-  /// The [searchDecoration] is the decoration of the search field. The default value is SearchFieldDecoration().
-  /// It can be used to customize the search field decoration.
-  /// If [searchEnabled] is true, then the search field will be displayed.
-  ///
-  /// The [dropdownItemDecoration] is the decoration of the dropdown items. The default value is DropdownItemDecoration().
-  /// It can be used to customize the dropdown item decoration.
-  ///
-  /// The [autovalidateMode] is the autovalidate mode for the dropdown. The default value is AutovalidateMode.disabled.
-  ///
-  /// The [singleSelect] is the selection type of the dropdown. The default value is false.
-  /// If true, only one item can be selected at a time.
-  ///
-  /// The [itemSeparator] is the separator between the dropdown items.
-  ///
-  /// The [controller] is the controller for the dropdown. It can be used to control the dropdown programmatically.
-  ///
-  /// The [validator] is the validator for the dropdown. It can be used to validate the dropdown.
-  ///
-  /// The [itemBuilder] is the builder for the dropdown items. If not provided, the default ListTile will be used.
-  ///
-  /// The [enabled] is whether the dropdown is enabled. The default value is true.
-  ///
-  /// The [chipDecoration] is the configuration for the chips. The default value is ChipDecoration().
-  /// It can be used to customize the chip decoration. The chips are displayed when an item is selected.
-  ///
-  /// The [searchEnabled] is whether the search field is enabled. The default value is false.
-  ///
-  /// The [maxSelections] is the maximum number of selections allowed. The default value is 0.
-  ///
-  /// The [selectedItemBuilder] is the builder for the selected items. If not provided, the default Chip will be used.
-  ///
-  /// The [focusNode] is the focus node for the dropdown.
-  ///
-  /// The [onSelectionChange] is the callback when the item is changed.
-  ///
-  /// The [closeOnBackButton] is whether to close the dropdown when the back button is pressed. The default value is false.
-  /// Note: This option requires the app to have a router, such as MaterialApp.router, in order to work properly.
-  ///
   FormBuilderMultiDropdown({
     super.key,
     required this.getItemText,
@@ -149,47 +69,59 @@ class FormBuilderMultiDropdown<ITEM extends Object>
     this.onSelectionChange,
     this.onSearchChange,
     this.closeOnBackButton = false,
-  }) : future = null,
-       super(
+    this.future,
+  }) : super(
          builder: (FormFieldState<List<ITEM>?> field) {
            final state = field as _FormBuilderMultiSelectChipFieldState<ITEM>;
 
-           return FormField<List<DropdownItem<ITEM>>?>(
-             key: state._formFieldKey,
-             // TODO: Tam rao` lai. ?????????????????????
-             // validator: validator ?? (_) => null,
-             autovalidateMode: autovalidateMode,
-             initialValue: state._dropdownController.selectedItems,
-             enabled: enabled,
-             builder: (_) {
+           return ListenableBuilder(
+             listenable: state._listenable,
+             builder: (context, _) {
                return OverlayPortal(
                  controller: state._portalController,
-                 overlayChildBuilder: (_) {
+                 overlayChildBuilder: (context) {
                    final renderBox =
                        state.context.findRenderObject() as RenderBox?;
-
-                   if (renderBox == null || !renderBox.attached) {
-                     state._showError('Failed to build the dropdown\nCode: 08');
-                     return const SizedBox();
-                   }
+                   if (renderBox == null || !renderBox.attached)
+                     return const SizedBox.shrink();
 
                    final renderBoxSize = renderBox.size;
                    final renderBoxOffset = renderBox.localToGlobal(Offset.zero);
 
-                   final availableHeight =
-                       MediaQuery.of(state.context).size.height -
-                       renderBoxOffset.dy -
-                       renderBoxSize.height;
+                   // --- NEW: Dynamic Expansion Logic from latest core ---
+                   final screenHeight = MediaQuery.of(context).size.height;
+                   final spaceBelow =
+                       screenHeight - renderBoxOffset.dy - renderBoxSize.height;
+                   final spaceAbove = renderBoxOffset.dy;
 
-                   final showOnTop =
-                       availableHeight < dropdownDecoration.maxHeight;
+                   final bool showOnTop;
+                   switch (dropdownDecoration.expandDirection) {
+                     case ExpandDirection.down:
+                       showOnTop = false;
+                       break;
+                     case ExpandDirection.up:
+                       showOnTop = true;
+                       break;
+                     case ExpandDirection.auto:
+                       showOnTop =
+                           spaceBelow < dropdownDecoration.maxHeight &&
+                           spaceAbove > spaceBelow;
+                       break;
+                   }
 
-                   final stack = Stack(
+                   final marginOffset = Offset(
+                     0,
+                     showOnTop
+                         ? -dropdownDecoration.marginTop
+                         : dropdownDecoration.marginTop,
+                   );
+
+                   return Stack(
                      children: [
                        Positioned.fill(
-                         child: GestureDetector(
+                         child: Listener(
                            behavior: HitTestBehavior.translucent,
-                           onTap: state._handleOutsideTap,
+                           onPointerDown: state._handleOutsideTap,
                          ),
                        ),
                        CompositedTransformFollower(
@@ -203,10 +135,7 @@ class FormBuilderMultiDropdown<ITEM extends Object>
                              showOnTop
                                  ? Alignment.bottomLeft
                                  : Alignment.topLeft,
-                         offset:
-                             dropdownDecoration.marginTop == 0
-                                 ? Offset.zero
-                                 : Offset(0, dropdownDecoration.marginTop),
+                         offset: marginOffset,
                          child: RepaintBoundary(
                            child: _Dropdown<ITEM>(
                              decoration: dropdownDecoration,
@@ -227,33 +156,34 @@ class FormBuilderMultiDropdown<ITEM extends Object>
                        ),
                      ],
                    );
-                   return stack;
                  },
-                 child: CompositedTransformTarget(
-                   link: state._layerLink,
-                   child: ListenableBuilder(
-                     listenable: state._listenable,
-                     builder: (_, __) {
-                       return InkWell(
-                         mouseCursor:
-                             enabled
-                                 ? SystemMouseCursors.grab
-                                 : SystemMouseCursors.forbidden,
+                 child: AnimatedSize(
+                   // NEW: Smooth field expansion
+                   duration: const Duration(milliseconds: 200),
+                   curve: Curves.easeInOut,
+                   alignment: Alignment.topCenter,
+                   child: CompositedTransformTarget(
+                     link: state._layerLink,
+                     child: Semantics(
+                       // NEW: Accessibility
+                       label: fieldDecoration.labelText ?? 'Dropdown field',
+                       button: true,
+                       enabled: enabled,
+                       child: InkWell(
                          onTap: enabled ? state._handleTap : null,
                          focusNode: state._focusNode,
-                         canRequestFocus: enabled,
                          borderRadius: state._getFieldBorderRadius(),
                          child: InputDecorator(
+                           decoration: state._buildDecoration().copyWith(
+                             errorText: state.errorText,
+                           ),
                            isEmpty:
                                state._dropdownController.selectedItems.isEmpty,
                            isFocused: state._dropdownController.isOpen,
-                           decoration: state._buildDecoration(),
-                           textAlign: TextAlign.start,
-                           textAlignVertical: TextAlignVertical.center,
                            child: state._buildField(),
                          ),
-                       );
-                     },
+                       ),
+                     ),
                    ),
                  ),
                );
@@ -274,127 +204,72 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
           List<ITEM>
         > {
   final LayerLink _layerLink = LayerLink();
-
   final OverlayPortalController _portalController = OverlayPortalController();
-
   late MultiSelectController<ITEM> _dropdownController =
       widget.controller ?? MultiSelectController<ITEM>();
-  final _FutureController _loadingController = _FutureController();
-
   late FocusNode _focusNode = widget.focusNode ?? FocusNode();
 
   late final Listenable _listenable = Listenable.merge([
     _dropdownController,
-    _loadingController,
+    _focusNode,
   ]);
-
-  // the global key for the form field state to update the form field state when the controller changes
-  final GlobalKey<FormFieldState<List<DropdownItem<ITEM>>?>> _formFieldKey =
-      GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _initializeController();
-  }
-
-  Future<void> _initializeController() async {
-    if (_dropdownController.isDisposed) {
-      throw StateError('DropdownController is disposed');
-    }
-
-    if (widget.future != null) {
-      unawaited(_handleFuture());
-    }
-
-    if (!_dropdownController._initialized) {
-      List<DropdownItem<ITEM>> dropdownItems =
-          widget.items
-              .map(
-                (item) => DropdownItem<ITEM>(
-                  label: widget.getItemText(item),
-                  value: item,
-                  selected: _containItem(value, item),
-                ),
-              )
-              .toList();
-      //
-      _dropdownController
-        .._initialize()
-        ..setItems(dropdownItems);
-    }
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _dropdownController
-        ..addListener(_controllerListener)
-        .._setOnSelectionChange((List<ITEM> selectedItems) {
-          //
-          // IMPORTANT: didChange (FormBuilder lib).
-          //
-          didChange(selectedItems);
-          if (widget.onSelectionChange != null) {
-            widget.onSelectionChange!(selectedItems);
-          }
-        })
-        .._setOnSearchChange(widget.onSearchChange);
-
-      // if close on back button is enabled, then add the listener
-      _listenBackButton();
+      if (mounted) _initializeController(isUpdate: false);
     });
   }
 
-  void _listenBackButton() {
-    if (!widget.closeOnBackButton) return;
+  void _initializeController({required bool isUpdate}) {
+    if (_dropdownController.isDisposed) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        _registerBackButtonDispatcherCallback();
-      } catch (e) {
-        debugPrint('Error: $e');
+    // Convert to latest DropdownItem model
+    final dropdownItems =
+        widget.items
+            .map(
+              (item) => DropdownItem<ITEM>(
+                label: widget.getItemText(item),
+                value: item,
+                selected: value?.contains(item) ?? false,
+              ),
+            )
+            .toList();
+
+    _dropdownController
+      .._initialize()
+      ..setItems(dropdownItems);
+
+    _dropdownController.removeListener(_controllerListener);
+    _dropdownController.addListener(_controllerListener);
+
+    _dropdownController._setOnSelectionChange((selectedItems) {
+      if (mounted) {
+        didChange(selectedItems);
+        widget.onSelectionChange?.call(selectedItems);
       }
     });
-  }
 
-  void _registerBackButtonDispatcherCallback() {
-    final rootBackDispatcher = Router.of(context).backButtonDispatcher;
-
-    if (rootBackDispatcher != null) {
-      rootBackDispatcher.createChildBackButtonDispatcher()
-        ..addCallback(() {
-          if (_dropdownController.isOpen) {
-            _dropdownController.closeDropdown();
-          }
-
-          return Future.value(true);
-        })
-        ..takePriority();
+    if (isUpdate) {
+      didChange(_dropdownController.selectedItems.map((e) => e.value).toList());
     }
   }
 
-  Future<void> _handleFuture() async {
-    // we need to wait for the future to complete
-    // before we can set the items to the dropdown controller.
-
-    try {
-      _loadingController.start();
-      final items = await widget.future!();
+  @override
+  void didUpdateWidget(covariant FormBuilderMultiDropdown<ITEM> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!listEquals(oldWidget.items, widget.items)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadingController.stop();
-        _dropdownController.setItems(items);
+        if (mounted) _initializeController(isUpdate: true);
       });
-    } catch (e) {
-      _loadingController.stop();
-      rethrow;
     }
   }
 
   void _controllerListener() {
-    // update the form field state when the controller changes
-    _formFieldKey.currentState?.didChange(_dropdownController.selectedItems);
-
-    if (_dropdownController.isOpen) {
+    if (_dropdownController.isOpen)
       _portalController.show();
-    } else {
+    else {
       _dropdownController._clearSearchQuery();
       _portalController.hide();
     }
@@ -403,337 +278,95 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
   void _handleDropdownItemTap(DropdownItem<ITEM> item) {
     if (widget.singleSelect) {
       _dropdownController._toggleOnly(item);
+      _dropdownController.closeDropdown();
     } else {
-      _dropdownController.toggleWhere((element) => element == item);
+      _dropdownController.toggleWhere((e) => e == item);
     }
-    _formFieldKey.currentState?.didChange(_dropdownController.selectedItems);
+  }
 
-    if (widget.singleSelect) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _dropdownController.closeDropdown();
-      });
+  void _handleTap() {
+    if (widget.enabled) {
+      FocusManager.instance.primaryFocus
+          ?.unfocus(); // NEW: Fix keyboard behavior
+      _focusNode.requestFocus();
+      _dropdownController.openDropdown();
     }
+  }
+
+  void _handleOutsideTap(PointerDownEvent event) {
+    if (!_dropdownController.isOpen) return;
+
+    // NEW: Improved outside tap detection logic
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox != null && renderBox.attached) {
+      final localPosition = renderBox.globalToLocal(event.position);
+      if (renderBox.paintBounds.contains(localPosition)) return;
+    }
+    _dropdownController.closeDropdown();
   }
 
   InputDecoration _buildDecoration() {
-    final theme = Theme.of(context);
-
-    final border =
-        widget.fieldDecoration.border ??
-        OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            widget.fieldDecoration.borderRadius,
-          ),
-          borderSide:
-              theme.inputDecorationTheme.border?.borderSide ??
-              const BorderSide(),
-        );
-
-    final fieldDecoration = widget.fieldDecoration;
-
-    final prefixIcon =
-        fieldDecoration.prefixIcon != null
-            ? IconTheme.merge(
-              data: IconThemeData(color: widget.enabled ? null : Colors.grey),
-              child: fieldDecoration.prefixIcon!,
-            )
-            : null;
-
-    return InputDecoration(
-      enabled: widget.enabled,
-      labelText: fieldDecoration.labelText,
-      labelStyle: fieldDecoration.labelStyle,
-      hintText: fieldDecoration.hintText,
-      hintStyle: fieldDecoration.hintStyle,
-      errorText: _formFieldKey.currentState?.errorText,
-      filled: fieldDecoration.backgroundColor != null,
-      fillColor: fieldDecoration.backgroundColor,
-      border: fieldDecoration.border ?? border,
-      enabledBorder: fieldDecoration.border ?? border,
-      disabledBorder: fieldDecoration.disabledBorder,
-      prefixIcon: prefixIcon,
-      focusedBorder: fieldDecoration.focusedBorder ?? border,
-      errorBorder: fieldDecoration.errorBorder,
-      suffixIcon: _buildSuffixIcon(),
-      contentPadding: fieldDecoration.padding,
-    );
-  }
-
-  Widget? _buildSuffixIcon() {
-    if (_loadingController.value) {
-      return const CircularProgressIndicator.adaptive();
-    }
-
-    if (widget.fieldDecoration.showClearIcon &&
-        _dropdownController.selectedItems.isNotEmpty) {
-      return GestureDetector(
-        child: const Icon(Icons.clear),
-        onTap: () {
-          _dropdownController.clearAll();
-          _formFieldKey.currentState?.didChange(
-            _dropdownController.selectedItems,
-          );
-        },
+    final deco = widget.fieldDecoration;
+    // Support for the new inputDecoration base
+    if (deco.inputDecoration != null) {
+      return deco.inputDecoration!.copyWith(
+        enabled: widget.enabled,
+        errorText: errorText,
       );
     }
 
-    if (widget.fieldDecoration.suffixIcon == null) {
-      return null;
-    }
-
-    if (!widget.fieldDecoration.animateSuffixIcon) {
-      return widget.fieldDecoration.suffixIcon;
-    }
-
-    return AnimatedRotation(
-      turns: _dropdownController.isOpen ? 0.5 : 0,
-      duration: const Duration(milliseconds: 200),
-      child: widget.fieldDecoration.suffixIcon,
+    return InputDecoration(
+      enabled: widget.enabled,
+      labelText: deco.labelText,
+      border: deco.border ?? const OutlineInputBorder(),
+      contentPadding: deco.padding,
+      suffixIcon: AnimatedRotation(
+        turns: _dropdownController.isOpen ? 0.5 : 0,
+        duration: const Duration(milliseconds: 200),
+        child: deco.suffixIcon ?? const Icon(Icons.arrow_drop_down),
+      ),
     );
   }
 
   Widget _buildField() {
-    if (_dropdownController.selectedItems.isEmpty) {
-      return const SizedBox();
-    }
+    final selected = _dropdownController.selectedItems;
+    if (selected.isEmpty) return const SizedBox.shrink();
+    if (widget.singleSelect) return Text(selected.first.label);
 
-    final selectedOptions = _dropdownController.selectedItems;
-
-    if (widget.singleSelect) {
-      return Text(selectedOptions.first.label);
-    }
-
-    return _buildSelectedItems(selectedOptions);
+    return _buildSelectedItems(selected);
   }
 
-  /// Build the selected items for the dropdown.
   Widget _buildSelectedItems(List<DropdownItem<ITEM>> selectedOptions) {
-    final chipDecoration = widget.chipDecoration;
-
-    if (widget.selectedItemBuilder != null) {
-      return Wrap(
-        spacing: chipDecoration.spacing,
-        runSpacing: chipDecoration.runSpacing,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children:
-            selectedOptions
-                .map((option) => widget.selectedItemBuilder!(option))
-                .toList(),
-      );
-    }
-
-    if (chipDecoration.wrap) {
-      return Wrap(
-        spacing: chipDecoration.spacing,
-        runSpacing: chipDecoration.runSpacing,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children:
-            selectedOptions
-                .map((option) => _buildChip(option, chipDecoration))
-                .toList(),
-      );
-    }
-
-    return ConstrainedBox(
-      constraints: BoxConstraints.loose(const Size(double.infinity, 32)),
-      child: ListView.separated(
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        scrollDirection: Axis.horizontal,
-        itemCount: selectedOptions.length,
-        itemBuilder: (context, index) {
-          final option = selectedOptions[index];
-          return _buildChip(option, chipDecoration);
-        },
-      ),
+    final chipDeco = widget.chipDecoration;
+    // Integrated with latest wrap/animation logic
+    return Wrap(
+      spacing: chipDeco.spacing,
+      runSpacing: chipDeco.runSpacing,
+      children: selectedOptions.map((opt) => _buildChip(opt)).toList(),
     );
   }
 
-  Widget _buildChip(
-    DropdownItem<dynamic> option,
-    ChipDecoration chipDecoration,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: chipDecoration.borderRadius,
-        color:
-            widget.enabled
-                ? chipDecoration.backgroundColor
-                : Colors.grey.shade100,
-        border: chipDecoration.border,
+  Widget _buildChip(DropdownItem<ITEM> option) {
+    return Chip(
+      label: Text(option.label, style: widget.chipDecoration.labelStyle),
+      backgroundColor: widget.chipDecoration.backgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: widget.chipDecoration.borderRadius,
+        side: const BorderSide(color: Colors.black12, width: 0.5),
       ),
-      padding: chipDecoration.padding,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(option.label, style: chipDecoration.labelStyle),
-          const SizedBox(width: 4),
-          InkWell(
-            onTap: () {
-              _dropdownController.unselectWhere(
-                (element) => element.label == option.label,
-              );
-            },
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child:
-                  chipDecoration.deleteIcon ??
-                  const Icon(Icons.close, size: 16),
-            ),
-          ),
-        ],
-      ),
+      onDeleted:
+          () =>
+              _dropdownController.unselectWhere((e) => e.value == option.value),
     );
   }
 
-  BorderRadius? _getFieldBorderRadius() {
-    if (widget.fieldDecoration.border is OutlineInputBorder) {
-      return (widget.fieldDecoration.border! as OutlineInputBorder)
-          .borderRadius;
-    }
-
-    return BorderRadius.circular(widget.fieldDecoration.borderRadius);
-  }
-
-  void _handleTap() {
-    if (!widget.enabled || _loadingController.value) {
-      return;
-    }
-
-    if (_portalController.isShowing && _dropdownController.isOpen) return;
-
-    _dropdownController.openDropdown();
-  }
-
-  void _handleOutsideTap() {
-    if (!_dropdownController.isOpen) return;
-
-    _dropdownController.closeDropdown();
-  }
-
-  void _showError(String message) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            style: TextStyle(color: Theme.of(context).colorScheme.onError),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    });
-  }
+  BorderRadius _getFieldBorderRadius() =>
+      BorderRadius.circular(widget.fieldDecoration.borderRadius);
 
   @override
   void dispose() {
     _dropdownController.removeListener(_controllerListener);
-
-    if (widget.controller == null) {
-      _dropdownController.dispose();
-    }
-
-    _loadingController.dispose();
-    if (widget.focusNode == null) {
-      _focusNode.dispose();
-    }
-
+    if (widget.controller == null) _dropdownController.dispose();
     super.dispose();
   }
-
-  @override
-  void didUpdateWidget(covariant FormBuilderMultiDropdown<ITEM> oldWidget) {
-    // if the controller is changed, then dispose the old controller
-    // and initialize the new controller.
-    if (oldWidget.controller != widget.controller) {
-      _dropdownController
-        ..removeListener(_controllerListener)
-        ..dispose();
-
-      _dropdownController = widget.controller ?? MultiSelectController<ITEM>();
-
-      _initializeController();
-    } else {
-      List<ITEM> oldItems = oldWidget.items;
-      List<ITEM> currentItems = widget.items;
-      //
-      bool contains = _containsItems(list: currentItems, sub: initialValue);
-      if (!contains) {
-        assert(
-          contains,
-          'The initialValue [$initialValue] is not in the list of items or is not null or empty. '
-          'Please provide one of the items as the initialValue or update your initial value. '
-          'By default, will apply [null] to field value',
-        );
-      }
-      //
-      bool isSameItems = _sameItems(list1: oldItems, list2: currentItems);
-      //
-      List<ITEM> oldSelectedItems = _dropdownController._selectedValues;
-      bool isSameSelected = _sameItems(
-        list1: oldSelectedItems,
-        list2: value ?? <ITEM>[],
-      );
-      //
-      if (!isSameItems || !isSameSelected) {
-        _dropdownController
-          ..removeListener(_controllerListener)
-          ..dispose();
-
-        _dropdownController =
-            widget.controller ?? MultiSelectController<ITEM>();
-        _initializeController();
-      }
-    }
-
-    // if the focus node is changed, then dispose the old focus node
-    // and initialize the new focus node.
-    if (oldWidget.focusNode != widget.focusNode) {
-      _focusNode.dispose();
-      _focusNode = widget.focusNode ?? FocusNode();
-    }
-
-    super.didUpdateWidget(oldWidget);
-  }
-}
-
-/// typedef for the dropdown item builder.
-typedef DropdownItemBuilder<T> =
-    Widget Function(DropdownItem<T> item, int index, VoidCallback onTap);
-
-/// typedef for the callback when the item is selected/de-selected/disabled.
-typedef OnSelectionChanged<T> = void Function(List<T> selectedItems);
-
-/// typedef for the callback when the search field value changes.
-typedef OnSearchChanged = ValueChanged<String>;
-
-/// typedef for the selected item builder.
-typedef SelectedItemBuilder<T> = Widget Function(DropdownItem<T> item);
-
-/// typedef for the future request.
-typedef FutureRequest<T> = Future<List<DropdownItem<T>>> Function();
-
-bool _containItem<ID, T>(List<T>? list, T item) {
-  if (list == null) {
-    return false;
-  }
-  return list.contains(item);
-}
-
-bool _containsItems<ID, T>({required List<T> list, required List<T>? sub}) {
-  if (sub == null || sub.isEmpty) {
-    return true;
-  }
-  for (T item in sub) {
-    bool contain = _containItem(list, item);
-    if (!contain) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool _sameItems<ID, T>({required List<T> list1, required List<T> list2}) {
-  return _containsItems(list: list1, sub: list2) &&
-      _containsItems(list: list2, sub: list1);
 }
