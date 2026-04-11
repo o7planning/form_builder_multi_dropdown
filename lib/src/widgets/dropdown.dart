@@ -121,7 +121,9 @@ class _DropdownState<T> extends State<_Dropdown<T>>
           borderRadius: widget.decoration.borderRadius,
           clipBehavior: Clip.antiAlias,
           color: resolvedBg,
-          surfaceTintColor: resolvedBg,
+          // TODO: #FIX-001: Remove (Need for Glass Theme)
+          // Ensure muti-dropdown menu background color same as background color of dropdown.
+          surfaceTintColor:  Colors.transparent, // resolvedBg
           child: Focus(
             canRequestFocus: false,
             skipTraversal: true,
@@ -129,7 +131,9 @@ class _DropdownState<T> extends State<_Dropdown<T>>
               decoration: BoxDecoration(
                 borderRadius: widget.decoration.borderRadius,
                 color: resolvedBg,
-                backgroundBlendMode: BlendMode.dstATop,
+                // TODO: #FIX-002: Remove (Need for Glass Theme)
+                // Ensure muti-dropdown menu background color same as background color of dropdown.
+                // backgroundBlendMode: BlendMode.dstATop, // Remove this!!
               ),
               constraints: BoxConstraints(
                 maxWidth: widget.width,

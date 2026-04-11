@@ -44,6 +44,8 @@ class FormBuilderMultiDropdown<ITEM extends Object>
   final bool closeOnBackButton;
   final String Function(ITEM item) getItemText;
 
+  final FloatingLabelBehavior? floatingLabelBehavior;
+
   FormBuilderMultiDropdown({
     super.key,
     required this.getItemText,
@@ -70,6 +72,7 @@ class FormBuilderMultiDropdown<ITEM extends Object>
     this.onSearchChange,
     this.closeOnBackButton = false,
     this.future,
+    this.floatingLabelBehavior  ,
   }) : super(
          builder: (FormFieldState<List<ITEM>?> field) {
            final state = field as _FormBuilderMultiSelectChipFieldState<ITEM>;
@@ -82,8 +85,9 @@ class FormBuilderMultiDropdown<ITEM extends Object>
                  overlayChildBuilder: (context) {
                    final renderBox =
                        state.context.findRenderObject() as RenderBox?;
-                   if (renderBox == null || !renderBox.attached)
+                   if (renderBox == null || !renderBox.attached) {
                      return const SizedBox.shrink();
+                   }
 
                    final renderBoxSize = renderBox.size;
                    final renderBoxOffset = renderBox.localToGlobal(Offset.zero);
@@ -208,9 +212,9 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
         > {
   final LayerLink _layerLink = LayerLink();
   final OverlayPortalController _portalController = OverlayPortalController();
-  late MultiSelectController<ITEM> _dropdownController =
+  late final MultiSelectController<ITEM> _dropdownController =
       widget.controller ?? MultiSelectController<ITEM>();
-  late FocusNode _focusNode = widget.focusNode ?? FocusNode();
+  late final FocusNode _focusNode = widget.focusNode ?? FocusNode();
 
   late final Listenable _listenable = Listenable.merge([
     _dropdownController,
@@ -318,8 +322,9 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
       );
     }
     return InputDecoration(
-      isDense: true,
+      isDense: false, // Important: Do not change
       filled: true,
+      floatingLabelBehavior: widget.floatingLabelBehavior,
       enabled: widget.enabled,
       labelText: deco.labelText,
       enabledBorder: deco.border, // TODO deco.enabledBorder,
@@ -363,7 +368,7 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
         borderRadius: widget.chipDecoration.borderRadius,
         side:
             BorderSide
-                .none, // const BorderSide(color: Colors.black12, width: 0.5),
+                .none,
       ),
       onDeleted:
           () =>
