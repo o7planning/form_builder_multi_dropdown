@@ -179,7 +179,10 @@ class FormBuilderMultiDropdown<ITEM extends Object>
                            ),
                            isEmpty:
                                state._dropdownController.selectedItems.isEmpty,
-                           isFocused: state._dropdownController.isOpen,
+                           // isFocused: state._dropdownController.isOpen,
+                           isFocused:
+                               state._dropdownController.isOpen ||
+                               state._focusNode.hasFocus,
                            child: state._buildField(),
                          ),
                        ),
@@ -314,11 +317,17 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
         errorText: errorText,
       );
     }
-
     return InputDecoration(
+      isDense: true,
+      filled: true,
       enabled: widget.enabled,
       labelText: deco.labelText,
+      enabledBorder: deco.border, // TODO deco.enabledBorder,
+      focusedErrorBorder: deco.errorBorder, // TODO deco.focusedErrorBorder,
       border: deco.border ?? const OutlineInputBorder(),
+      focusedBorder: deco.focusedBorder,
+      errorBorder: deco.errorBorder,
+      disabledBorder: deco.disabledBorder,
       contentPadding: deco.padding,
       suffixIcon: AnimatedRotation(
         turns: _dropdownController.isOpen ? 0.5 : 0,
@@ -352,7 +361,9 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
       backgroundColor: widget.chipDecoration.backgroundColor,
       shape: RoundedRectangleBorder(
         borderRadius: widget.chipDecoration.borderRadius,
-        side: const BorderSide(color: Colors.black12, width: 0.5),
+        side:
+            BorderSide
+                .none, // const BorderSide(color: Colors.black12, width: 0.5),
       ),
       onDeleted:
           () =>
