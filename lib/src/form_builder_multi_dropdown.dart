@@ -8,18 +8,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 part 'controllers/future_controller.dart';
-
 part 'controllers/multiselect_controller.dart';
-
 part 'enum/enums.dart';
-
 part 'models/decoration.dart';
-
 part 'models/dropdown_item.dart';
-
-part 'widgets/dropdown.dart';
-
 part 'typedef.dart';
+part 'widgets/dropdown.dart';
 
 /// The 2026 Pro Version: FormBuilderMultiDropdown
 /// Merged with the latest multi_dropdown core features (ExpandDirection.auto, Animations, etc.)
@@ -72,7 +66,7 @@ class FormBuilderMultiDropdown<ITEM extends Object>
     this.onSearchChange,
     this.closeOnBackButton = false,
     this.future,
-    this.floatingLabelBehavior  ,
+    this.floatingLabelBehavior,
   }) : super(
          builder: (FormFieldState<List<ITEM>?> field) {
            final state = field as _FormBuilderMultiSelectChipFieldState<ITEM>;
@@ -322,13 +316,16 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
       );
     }
     return InputDecoration(
-      isDense: false, // Important: Do not change
+      isDense: false,
+      // Important: Do not change
       filled: true,
       floatingLabelBehavior: widget.floatingLabelBehavior,
       enabled: widget.enabled,
       labelText: deco.labelText,
-      enabledBorder: deco.border, // TODO deco.enabledBorder,
-      focusedErrorBorder: deco.errorBorder, // TODO deco.focusedErrorBorder,
+      enabledBorder: deco.border,
+      // TODO deco.enabledBorder,
+      focusedErrorBorder: deco.errorBorder,
+      // TODO deco.focusedErrorBorder,
       border: deco.border ?? const OutlineInputBorder(),
       focusedBorder: deco.focusedBorder,
       errorBorder: deco.errorBorder,
@@ -366,9 +363,7 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
       backgroundColor: widget.chipDecoration.backgroundColor,
       shape: RoundedRectangleBorder(
         borderRadius: widget.chipDecoration.borderRadius,
-        side:
-            BorderSide
-                .none,
+        side: BorderSide.none,
       ),
       onDeleted:
           () =>

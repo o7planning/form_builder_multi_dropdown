@@ -71,11 +71,13 @@ class _DropdownState<T> extends State<_Dropdown<T>>
 
   static const Map<ShortcutActivator, Intent> _webShortcuts =
       <ShortcutActivator, Intent>{
-    SingleActivator(LogicalKeyboardKey.arrowDown):
-        DirectionalFocusIntent(TraversalDirection.down),
-    SingleActivator(LogicalKeyboardKey.arrowUp):
-        DirectionalFocusIntent(TraversalDirection.up),
-  };
+        SingleActivator(LogicalKeyboardKey.arrowDown): DirectionalFocusIntent(
+          TraversalDirection.down,
+        ),
+        SingleActivator(LogicalKeyboardKey.arrowUp): DirectionalFocusIntent(
+          TraversalDirection.up,
+        ),
+      };
 
   @override
   void initState() {
@@ -123,7 +125,8 @@ class _DropdownState<T> extends State<_Dropdown<T>>
           color: resolvedBg,
           // TODO: #FIX-001: Remove (Need for Glass Theme)
           // Ensure muti-dropdown menu background color same as background color of dropdown.
-          surfaceTintColor:  Colors.transparent, // resolvedBg
+          surfaceTintColor: Colors.transparent,
+          // resolvedBg
           child: Focus(
             canRequestFocus: false,
             skipTraversal: true,
@@ -153,8 +156,9 @@ class _DropdownState<T> extends State<_Dropdown<T>>
                   if (widget.items.isNotEmpty)
                     Flexible(
                       child: ListView.separated(
-                        separatorBuilder: (_, __) =>
-                            widget.itemSeparator ?? const SizedBox.shrink(),
+                        separatorBuilder:
+                            (_, __) =>
+                                widget.itemSeparator ?? const SizedBox.shrink(),
                         shrinkWrap: true,
                         padding:
                             widget.decoration.listPadding ?? EdgeInsets.zero,
@@ -197,23 +201,25 @@ class _DropdownState<T> extends State<_Dropdown<T>>
 
     final disabledColor =
         widget.dropdownItemDecoration.disabledBackgroundColor ??
-            widget.dropdownItemDecoration.backgroundColor?.withAlpha(100);
+        widget.dropdownItemDecoration.backgroundColor?.withAlpha(100);
 
-    final tileColor = option.disabled
-        ? disabledColor
-        : option.selected
+    final tileColor =
+        option.disabled
+            ? disabledColor
+            : option.selected
             ? widget.dropdownItemDecoration.selectedBackgroundColor
             : widget.dropdownItemDecoration.backgroundColor;
 
-    final trailing = option.disabled
-        ? widget.dropdownItemDecoration.disabledIcon
-        : option.selected
+    final trailing =
+        option.disabled
+            ? widget.dropdownItemDecoration.disabledIcon
+            : option.selected
             ? AnimatedScale(
-                scale: 1,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.elasticOut,
-                child: widget.dropdownItemDecoration.selectedIcon,
-              )
+              scale: 1,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.elasticOut,
+              child: widget.dropdownItemDecoration.selectedIcon,
+            )
             : null;
 
     return AnimatedContainer(
@@ -222,9 +228,10 @@ class _DropdownState<T> extends State<_Dropdown<T>>
       child: ListTile(
         title: Text(
           option.label,
-          style: option.selected
-              ? widget.dropdownItemDecoration.selectedTextStyle
-              : widget.dropdownItemDecoration.textStyle,
+          style:
+              option.selected
+                  ? widget.dropdownItemDecoration.selectedTextStyle
+                  : widget.dropdownItemDecoration.textStyle,
         ),
         trailing: trailing,
         dense: true,
@@ -232,15 +239,18 @@ class _DropdownState<T> extends State<_Dropdown<T>>
         enabled: !option.disabled,
         selected: option.selected,
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        focusColor:
-            widget.dropdownItemDecoration.backgroundColor?.withAlpha(100),
-        selectedColor: widget.dropdownItemDecoration.selectedTextColor ??
+        focusColor: widget.dropdownItemDecoration.backgroundColor?.withAlpha(
+          100,
+        ),
+        selectedColor:
+            widget.dropdownItemDecoration.selectedTextColor ??
             theme.colorScheme.onSurface,
-        textColor: option.disabled
-            ? widget.dropdownItemDecoration.disabledTextColor ??
-                theme.disabledColor
-            : widget.dropdownItemDecoration.textColor ??
-                theme.colorScheme.onSurface,
+        textColor:
+            option.disabled
+                ? widget.dropdownItemDecoration.disabledTextColor ??
+                    theme.disabledColor
+                : widget.dropdownItemDecoration.textColor ??
+                    theme.colorScheme.onSurface,
         tileColor: Colors.transparent,
         selectedTileColor: Colors.transparent,
         onTap: () {
@@ -265,10 +275,7 @@ class _DropdownState<T> extends State<_Dropdown<T>>
 }
 
 class _SearchField extends StatefulWidget {
-  const _SearchField({
-    required this.decoration,
-    required this.onChanged,
-  });
+  const _SearchField({required this.decoration, required this.onChanged});
 
   final SearchFieldDecoration decoration;
 
@@ -338,19 +345,20 @@ class _SearchFieldState extends State<_SearchField> {
           filled: widget.decoration.filled,
           fillColor: widget.decoration.fillColor,
           prefixIcon: widget.decoration.searchIcon,
-          suffixIcon: widget.decoration.showClearIcon && _hasText
-              ? Tooltip(
-                  message: 'Clear search',
-                  child: IconButton(
-                    icon: const Icon(Icons.clear, size: 18),
-                    onPressed: () {
-                      _controller.clear();
-                      _debounce?.cancel();
-                      widget.onChanged('');
-                    },
-                  ),
-                )
-              : null,
+          suffixIcon:
+              widget.decoration.showClearIcon && _hasText
+                  ? Tooltip(
+                    message: 'Clear search',
+                    child: IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        _controller.clear();
+                        _debounce?.cancel();
+                        widget.onChanged('');
+                      },
+                    ),
+                  )
+                  : null,
         ),
         onChanged: _handleSearchChange,
       ),

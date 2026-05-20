@@ -77,9 +77,10 @@ class MultiSelectController<T> extends ChangeNotifier {
       _filteredItems = List.from(_items);
     } else {
       final query = _searchQuery.toLowerCase();
-      _filteredItems = _items
-          .where((item) => item.label.toLowerCase().contains(query))
-          .toList();
+      _filteredItems =
+          _items
+              .where((item) => item.label.toLowerCase().contains(query))
+              .toList();
     }
   }
 
