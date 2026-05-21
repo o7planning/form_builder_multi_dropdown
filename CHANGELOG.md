@@ -7,6 +7,26 @@ and this project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## 0.9.6
+
+- Fix README documentation.
+
+## 0.9.5
+
+- Update README documentation, add DEMO.
+
+## 0.9.4
+
+- Add `future` property to FormBuilderMultiDropdown.
+
+## 0.9.3
+
+- Fix web support.
+
+## 0.9.1
+
+- Update README documentation.
+
 ## 0.9.0
 
 ### Added

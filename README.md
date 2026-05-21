@@ -4,6 +4,13 @@
 
 It is built on top of the powerful **multi_dropdown** package and redesigned to work seamlessly with **FormBuilderField**.
 
+
+[LIVE DEMO](https://o7planning.github.io/demo/flutter/form_builder_multi_dropdown_demo/)
+
+[Download Demo Source Code](https://github.com/o7planning/form_builder_multi_dropdown_demo)
+
+![FormBuilderMultiDropdown Demo](https://o7planning.github.io/static/demo/flutter/form_builder_multi_dropdown_demo/images/demo.gif)
+
 ## Features
 
 - ✅ Fully compatible with `flutter_form_builder`
@@ -69,9 +76,9 @@ flutter pub get
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_multi_dropdown/form_builder_multi_dropdown.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 
 class ProgrammingLanguage {
-
   final int id;
   final String name;
   final String creator;
@@ -84,31 +91,24 @@ class ProgrammingLanguage {
 }
 
 class ExamplePage extends StatelessWidget {
-
   ExamplePage({super.key});
-
   final _formKey = GlobalKey<FormBuilderState>();
-
   final languages = [
-
     ProgrammingLanguage(
       id: 1,
       name: 'Dart',
       creator: 'Google',
     ),
-
     ProgrammingLanguage(
       id: 2,
       name: 'Kotlin',
       creator: 'JetBrains',
     ),
-
     ProgrammingLanguage(
       id: 3,
       name: 'Swift',
       creator: 'Apple',
     ),
-
     ProgrammingLanguage(
       id: 4,
       name: 'TypeScript',
@@ -118,49 +118,30 @@ class ExamplePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
       appBar: AppBar(
         title: const Text('FormBuilderMultiDropdown Example'),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16),
-
         child: FormBuilder(
-
           key: _formKey,
-
           child: Column(
-
             children: [
-
               FormBuilderMultiDropdown<ProgrammingLanguage>(
-
                 name: 'languages',
-
                 items: languages,
-
                 searchEnabled: true,
-
                 getItemText: (item) => item.name,
-
                 fieldDecoration: const FieldDecoration(
                   labelText: 'Programming Languages',
                 ),
-
-                validator: (values) {
-
-                  if (values == null || values.isEmpty) {
-                    return 'Please select at least one language';
-                  }
-
-                  return null;
-                },
-
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.required(
+                    errorText: 'Please select at least one language',
+                  ),
+                ]),
                 onSelectionChange: (selectedItems) {
-
                   debugPrint(
                     selectedItems
                         .map((e) => e.name)
@@ -168,25 +149,17 @@ class ExamplePage extends StatelessWidget {
                   );
                 },
               ),
-
               const SizedBox(height: 16),
-
               ElevatedButton(
-
                 onPressed: () {
-
                   final isValid =
                       _formKey.currentState?.saveAndValidate() ?? false;
-
                   if (isValid) {
-
                     final values =
                         _formKey.currentState?.value;
-
                     debugPrint(values.toString());
                   }
                 },
-
                 child: const Text('Submit'),
               ),
             ],
@@ -231,19 +204,18 @@ FormBuilderMultiDropdown<String>(
 # Validation
 
 ```dart
+import 'package:form_builder_validators/form_builder_validators.dart';
+
 FormBuilderMultiDropdown<String>(
-  name: 'skills',
-  items: items,
-  getItemText: (item) => item,
-
-  validator: (value) {
-
-    if (value == null || value.isEmpty) {
-      return 'Please select at least one item';
-    }
-
-    return null;
-  },
+    name: 'skills',
+    items: items,
+    getItemText: (item) => item,
+    // Optimized using the standard form_builder_validators ecosystem
+    validator: FormBuilderValidators.compose([
+        FormBuilderValidators.required(
+          errorText: 'Please select at least one item',
+        ),
+    ]),
 )
 ```
 
@@ -253,29 +225,19 @@ FormBuilderMultiDropdown<String>(
 
 ```dart
 FormBuilderMultiDropdown<ProgrammingLanguage>(
-
   name: 'languages',
-
   items: languages,
-
   getItemText: (item) => item.name,
-
   itemBuilder: (item, index, onTap) {
-
     final language = item.value;
-
     return ListTile(
-
       leading: CircleAvatar(
         child: Text(language.name[0]),
       ),
-
       title: Text(language.name),
-
       subtitle: Text(
         'Created by ${language.creator}',
       ),
-
       onTap: onTap,
     );
   },
@@ -293,7 +255,6 @@ FormBuilderMultiDropdown<String>(
   name: 'skills',
   items: items,
   getItemText: (item) => item,
-
   fieldDecoration: FieldDecoration(
     labelText: 'Skills',
     borderRadius: 12,
@@ -353,41 +314,18 @@ Use `future` to load data asynchronously.
 ```dart
 FormBuilderMultiDropdown<User>(
   name: 'users',
-
   items: const [],
-
-  future: (query) async {
-
+  // Corrected: No query parameter, and map the elements to DropdownItem wrappers
+  future: () async {
     await Future.delayed(
       const Duration(milliseconds: 500),
     );
-
-    return users;
+    return users.map((user) => DropdownItem<User>(
+      label: user.name,
+      value: user,
+    )).toList();
   },
-
   getItemText: (user) => user.name,
-)
-```
-
----
-
-# Custom Item Builder
-
-```dart
-FormBuilderMultiDropdown<User>(
-  name: 'users',
-  items: users,
-
-  getItemText: (user) => user.name,
-
-  itemBuilder: (item, index, onTap) {
-
-    return ListTile(
-      title: Text(item.label),
-      subtitle: Text(item.value.email),
-      onTap: onTap,
-    );
-  },
 )
 ```
 
@@ -400,9 +338,7 @@ FormBuilderMultiDropdown<String>(
   name: 'skills',
   items: items,
   getItemText: (item) => item,
-
   onSelectionChange: (selectedItems) {
-
     debugPrint(selectedItems.toString());
   },
 )

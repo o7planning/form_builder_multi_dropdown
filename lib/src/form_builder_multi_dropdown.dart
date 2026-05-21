@@ -205,8 +205,9 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
           List<ITEM>
         > {
   final LayerLink _layerLink = LayerLink();
+  final _FutureController _futureLoadingController = _FutureController();
   final OverlayPortalController _portalController = OverlayPortalController();
-  late final MultiSelectController<ITEM> _dropdownController =
+  late MultiSelectController<ITEM> _dropdownController =
       widget.controller ?? MultiSelectController<ITEM>();
   late final FocusNode _focusNode = widget.focusNode ?? FocusNode();
 
@@ -223,24 +224,54 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
     });
   }
 
-  void _initializeController({required bool isUpdate}) {
+  void _initializeController({required bool isUpdate}) async {
     if (_dropdownController.isDisposed) return;
 
-    // Convert to latest DropdownItem model
-    final dropdownItems =
-        widget.items
-            .map(
-              (item) => DropdownItem<ITEM>(
-                label: widget.getItemText(item),
-                value: item,
-                selected: value?.contains(item) ?? false,
-              ),
-            )
-            .toList();
+    // Check if data should be loaded asynchronously via the future callback
+    if (widget.future != null) {
+      try {
+        _futureLoadingController.start();
 
-    _dropdownController
-      .._initialize()
-      ..setItems(dropdownItems);
+        // Fetch items using the user-provided future request
+        final remoteDropdownItems = await widget.future!();
+
+        if (_dropdownController.isDisposed || !mounted) return;
+
+        // Map selection states based on current FormField value
+        final initializedItems =
+            remoteDropdownItems.map((item) {
+              return item.copyWith(
+                selected: value?.contains(item.value) ?? false,
+              );
+            }).toList();
+
+        _dropdownController
+          .._initialize()
+          ..setItems(initializedItems);
+      } catch (e) {
+        debugPrint('FormBuilderMultiDropdown async load error: $e');
+      } finally {
+        if (mounted && !_dropdownController.isDisposed) {
+          _futureLoadingController.stop();
+        }
+      }
+    } else {
+      // Fallback to local synchronous items conversion if future is null
+      final dropdownItems =
+          widget.items
+              .map(
+                (item) => DropdownItem<ITEM>(
+                  label: widget.getItemText(item),
+                  value: item,
+                  selected: value?.contains(item) ?? false,
+                ),
+              )
+              .toList();
+
+      _dropdownController
+        .._initialize()
+        ..setItems(dropdownItems);
+    }
 
     _dropdownController.removeListener(_controllerListener);
     _dropdownController.addListener(_controllerListener);
@@ -260,17 +291,48 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
   @override
   void didUpdateWidget(covariant FormBuilderMultiDropdown<ITEM> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!listEquals(oldWidget.items, widget.items)) {
+
+    // 1. Check if structural data sources or controller reference changed
+    final bool itemsChanged = !listEquals(oldWidget.items, widget.items);
+    final bool futureChanged = oldWidget.future != widget.future;
+    final bool controllerChanged = oldWidget.controller != widget.controller;
+
+    if (itemsChanged || futureChanged || controllerChanged) {
+      if (!mounted) return;
+
+      if (controllerChanged) {
+        // Detach listener from the old controller instance safely
+        oldWidget.controller?.removeListener(_controllerListener);
+
+        // Re-assign the local reference to the new instance or default
+        _dropdownController =
+            widget.controller ?? MultiSelectController<ITEM>();
+      }
+
+      // Safe execution wrapped in post-frame callback to prevent concurrent build errors
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _initializeController(isUpdate: true);
+        // Re-populate controller items based on updated specifications
+        _initializeController(isUpdate: true);
       });
     }
   }
 
+  @override
+  void reset() {
+    // Invoke the super class reset to clear the FormField value property properly
+    super.reset();
+
+    // Clear all internal selections within the MultiSelectController instance safely
+    if (!_dropdownController.isDisposed) {
+      _dropdownController.clearAll();
+      _dropdownController.clearSearch();
+    }
+  }
+
   void _controllerListener() {
-    if (_dropdownController.isOpen)
+    if (_dropdownController.isOpen) {
       _portalController.show();
-    else {
+    } else {
       _dropdownController._clearSearchQuery();
       _portalController.hide();
     }
@@ -377,6 +439,7 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
   @override
   void dispose() {
     _dropdownController.removeListener(_controllerListener);
+    _futureLoadingController.dispose(); // Add this line
     if (widget.controller == null) _dropdownController.dispose();
     super.dispose();
   }

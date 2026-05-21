@@ -3,6 +3,9 @@ part of '../form_builder_multi_dropdown.dart';
 /// Dropdown widget for the multiselect dropdown.
 ///
 class _Dropdown<T> extends StatefulWidget {
+  // *New*
+  final ValueListenable<bool>? loadingListenable;
+
   /// Creates a dropdown widget.
   const _Dropdown({
     required this.decoration,
@@ -13,6 +16,7 @@ class _Dropdown<T> extends StatefulWidget {
     required this.maxSelections,
     required this.items,
     required this.onItemTap,
+    this.loadingListenable, // *New*
     Key? key,
     this.onSearchChange,
     this.itemBuilder,
@@ -153,28 +157,49 @@ class _DropdownState<T> extends State<_Dropdown<T>>
                     ),
                   if (widget.decoration.header != null)
                     Flexible(child: widget.decoration.header!),
-                  if (widget.items.isNotEmpty)
-                    Flexible(
-                      child: ListView.separated(
-                        separatorBuilder:
-                            (_, __) =>
-                                widget.itemSeparator ?? const SizedBox.shrink(),
-                        shrinkWrap: true,
-                        padding:
-                            widget.decoration.listPadding ?? EdgeInsets.zero,
-                        itemCount: widget.items.length,
-                        itemBuilder: (_, index) => _buildOption(index, theme),
-                      ),
-                    ),
-                  if (widget.items.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(
-                        widget.decoration.noItemsFoundText,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
+                  // if (widget.items.isNotEmpty)
+                  //   Flexible(
+                  //     child: ListView.separated(
+                  //       separatorBuilder:
+                  //           (_, __) =>
+                  //               widget.itemSeparator ?? const SizedBox.shrink(),
+                  //       shrinkWrap: true,
+                  //       padding:
+                  //           widget.decoration.listPadding ?? EdgeInsets.zero,
+                  //       itemCount: widget.items.length,
+                  //       itemBuilder: (_, index) => _buildOption(index, theme),
+                  //     ),
+                  //   ),
+                  // if (widget.items.isEmpty)
+                  //   Padding(
+                  //     padding: const EdgeInsets.all(12),
+                  //     child: Text(
+                  //       widget.decoration.noItemsFoundText,
+                  //       textAlign: TextAlign.center,
+                  //       style: theme.textTheme.bodyMedium,
+                  //     ),
+                  //   ),
+                  // *New*
+                  // Wrap or toggle list view based on async loading state listenable
+                  if (widget.loadingListenable != null)
+                    ValueListenableBuilder<bool>(
+                      valueListenable: widget.loadingListenable!,
+                      builder: (context, isLoading, child) {
+                        if (isLoading) {
+                          return const Padding(
+                            padding: EdgeInsets.all(24.0),
+                            child: Center(
+                              child: CircularProgressIndicator.adaptive(),
+                            ),
+                          );
+                        }
+                        return child!;
+                      },
+                      child: _buildItemsContent(theme),
+                    )
+                  else
+                    _buildItemsContent(theme),
+                  //
                   if (widget.decoration.footer != null)
                     Flexible(child: widget.decoration.footer!),
                 ],
@@ -190,6 +215,31 @@ class _DropdownState<T> extends State<_Dropdown<T>>
     }
 
     return child;
+  }
+
+  // *New* (Split)
+  Widget _buildItemsContent(ThemeData theme) {
+    if (widget.items.isNotEmpty) {
+      return Flexible(
+        child: ListView.separated(
+          separatorBuilder:
+              (_, __) => widget.itemSeparator ?? const SizedBox.shrink(),
+          shrinkWrap: true,
+          padding: widget.decoration.listPadding ?? EdgeInsets.zero,
+          itemCount: widget.items.length,
+          itemBuilder: (_, index) => _buildOption(index, theme),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Text(
+        widget.decoration.noItemsFoundText,
+        textAlign: TextAlign.center,
+        style: theme.textTheme.bodyMedium,
+      ),
+    );
   }
 
   Widget _buildOption(int index, ThemeData theme) {
