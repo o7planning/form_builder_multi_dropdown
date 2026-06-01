@@ -15,12 +15,12 @@ part of '../form_builder_multi_dropdown.dart';
 /// controller.clearAll();
 /// ```
 class MultiSelectController<T> extends ChangeNotifier {
-  /// a flag to indicate whether the controller is initialized.
-  bool _initialized = false;
+  // a flag to indicate whether the controller is initialized.
+  //bool _initialized = false;
 
   /// set initialized flag to true.
   void _initialize() {
-    _initialized = true;
+    // _initialized = true;
   }
 
   final List<DropdownItem<T>> _items = [];
@@ -245,13 +245,6 @@ class MultiSelectController<T> extends ChangeNotifier {
   // ignore: use_setters_to_change_properties
   void _setOnSelectionChange(OnSelectionChanged<T>? onSelectionChanged) {
     _onSelectionChanged = onSelectionChanged;
-  }
-
-  // Using a method instead of a setter to maintain a consistent cascade-style
-  // API when called with other methods (e.g., controller.._initialize().._setOnSearchChange()).
-  // ignore: use_setters_to_change_properties
-  void _setOnSearchChange(OnSearchChanged? onSearchChanged) {
-    _onSearchChanged = onSearchChanged;
   }
 
   // sets the search query.

@@ -15,10 +15,3 @@ typedef SelectedItemBuilder<T> = Widget Function(DropdownItem<T> item);
 
 /// Typedef for asynchronous data fetching.
 typedef FutureRequest<T> = Future<List<DropdownItem<T>>> Function();
-
-bool _containItem<ID, T>(List<T>? list, T item) {
-  if (list == null) {
-    return false;
-  }
-  return list.contains(item);
-}
