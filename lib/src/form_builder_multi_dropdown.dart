@@ -8,11 +8,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 part 'controllers/future_controller.dart';
+
 part 'controllers/multiselect_controller.dart';
+
 part 'enum/enums.dart';
+
 part 'models/decoration.dart';
+
 part 'models/dropdown_item.dart';
+
 part 'typedef.dart';
+
 part 'widgets/dropdown.dart';
 
 /// The 2026 Pro Version: FormBuilderMultiDropdown
@@ -86,7 +92,6 @@ class FormBuilderMultiDropdown<ITEM extends Object>
                    final renderBoxSize = renderBox.size;
                    final renderBoxOffset = renderBox.localToGlobal(Offset.zero);
 
-                   // --- NEW: Dynamic Expansion Logic from latest core ---
                    final screenHeight = MediaQuery.of(context).size.height;
                    final spaceBelow =
                        screenHeight - renderBoxOffset.dy - renderBoxSize.height;
@@ -156,14 +161,12 @@ class FormBuilderMultiDropdown<ITEM extends Object>
                    );
                  },
                  child: AnimatedSize(
-                   // NEW: Smooth field expansion
                    duration: const Duration(milliseconds: 200),
                    curve: Curves.easeInOut,
                    alignment: Alignment.topCenter,
                    child: CompositedTransformTarget(
                      link: state._layerLink,
                      child: Semantics(
-                       // NEW: Accessibility
                        label: fieldDecoration.labelText ?? 'Dropdown field',
                        button: true,
                        enabled: enabled,
@@ -177,7 +180,6 @@ class FormBuilderMultiDropdown<ITEM extends Object>
                            ),
                            isEmpty:
                                state._dropdownController.selectedItems.isEmpty,
-                           // isFocused: state._dropdownController.isOpen,
                            isFocused:
                                state._dropdownController.isOpen ||
                                state._focusNode.hasFocus,
@@ -211,6 +213,8 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
       widget.controller ?? MultiSelectController<ITEM>();
   late final FocusNode _focusNode = widget.focusNode ?? FocusNode();
 
+  bool _lastIsOpenState = false;
+
   late final Listenable _listenable = Listenable.merge([
     _dropdownController,
     _focusNode,
@@ -219,6 +223,7 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
   @override
   void initState() {
     super.initState();
+    _lastIsOpenState = _dropdownController.isOpen;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _initializeController(isUpdate: false);
     });
@@ -227,17 +232,13 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
   void _initializeController({required bool isUpdate}) async {
     if (_dropdownController.isDisposed) return;
 
-    // Check if data should be loaded asynchronously via the future callback
     if (widget.future != null) {
       try {
         _futureLoadingController.start();
-
-        // Fetch items using the user-provided future request
         final remoteDropdownItems = await widget.future!();
 
         if (_dropdownController.isDisposed || !mounted) return;
 
-        // Map selection states based on current FormField value
         final initializedItems =
             remoteDropdownItems.map((item) {
               return item.copyWith(
@@ -256,7 +257,6 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
         }
       }
     } else {
-      // Fallback to local synchronous items conversion if future is null
       final dropdownItems =
           widget.items
               .map(
@@ -292,49 +292,106 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
   void didUpdateWidget(covariant FormBuilderMultiDropdown<ITEM> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // 1. Check if structural data sources or controller reference changed
     final bool itemsChanged = !listEquals(oldWidget.items, widget.items);
     final bool futureChanged = oldWidget.future != widget.future;
     final bool controllerChanged = oldWidget.controller != widget.controller;
 
-    if (itemsChanged || futureChanged || controllerChanged) {
+    final formBuilderState = FormBuilder.of(context);
+    final parentInitialValues =
+        formBuilderState?.initialValue[widget.name] as List<ITEM>?;
+    final List<ITEM> effectiveParentValue =
+        parentInitialValues ?? widget.initialValue ?? <ITEM>[];
+
+    final bool isOutofSyncWithTask =
+        !_sameItems(
+          effectiveParentValue,
+          _dropdownController.selectedItems.map((e) => e.value).toList(),
+        );
+
+    if (controllerChanged) {
+      oldWidget.controller?.removeListener(_controllerListener);
+      _dropdownController = widget.controller ?? MultiSelectController<ITEM>();
+    }
+
+    if (itemsChanged ||
+        futureChanged ||
+        controllerChanged ||
+        isOutofSyncWithTask) {
       if (!mounted) return;
 
-      if (controllerChanged) {
-        // Detach listener from the old controller instance safely
-        oldWidget.controller?.removeListener(_controllerListener);
+      setValue(effectiveParentValue);
+      _dropdownController._setOnSelectionChange(null);
 
-        // Re-assign the local reference to the new instance or default
-        _dropdownController =
-            widget.controller ?? MultiSelectController<ITEM>();
+      if (widget.future == null) {
+        final dropdownItems =
+            widget.items.map((item) {
+              return DropdownItem<ITEM>(
+                label: widget.getItemText(item),
+                value: item,
+                selected: _containItem(effectiveParentValue, item),
+              );
+            }).toList();
+
+        _dropdownController
+          .._initialize()
+          ..setItems(dropdownItems);
+
+        _dropdownController._setOnSelectionChange((selectedItems) {
+          if (mounted) {
+            didChange(selectedItems);
+            widget.onSelectionChange?.call(selectedItems);
+          }
+        });
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _initializeController(isUpdate: true);
+        });
       }
-
-      // Safe execution wrapped in post-frame callback to prevent concurrent build errors
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        // Re-populate controller items based on updated specifications
-        _initializeController(isUpdate: true);
-      });
-    }
-  }
-
-  @override
-  void reset() {
-    // Invoke the super class reset to clear the FormField value property properly
-    super.reset();
-
-    // Clear all internal selections within the MultiSelectController instance safely
-    if (!_dropdownController.isDisposed) {
-      _dropdownController.clearAll();
-      _dropdownController.clearSearch();
     }
   }
 
   void _controllerListener() {
+    if (_lastIsOpenState == _dropdownController.isOpen) return;
+    _lastIsOpenState = _dropdownController.isOpen;
+
     if (_dropdownController.isOpen) {
       _portalController.show();
     } else {
       _dropdownController._clearSearchQuery();
-      _portalController.hide();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _portalController.hide();
+        }
+      });
+    }
+  }
+
+  bool _containItem(List<ITEM>? list, ITEM item) {
+    for (var it in list ?? []) {
+      if (it == item) return true;
+      if (widget.getItemText(it) == widget.getItemText(item)) return true;
+    }
+    return false;
+  }
+
+  bool _containsItems(List<ITEM> list, List<ITEM>? sub) {
+    if (sub == null || sub.isEmpty) return true;
+    for (ITEM item in sub) {
+      if (!_containItem(list, item)) return false;
+    }
+    return true;
+  }
+
+  bool _sameItems(List<ITEM> list1, List<ITEM> list2) {
+    return _containsItems(list1, list2) && _containsItems(list2, list1);
+  }
+
+  @override
+  void reset() {
+    super.reset();
+    if (!_dropdownController.isDisposed) {
+      _dropdownController.clearSearch();
+      _initializeController(isUpdate: false);
     }
   }
 
@@ -349,8 +406,7 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
 
   void _handleTap() {
     if (widget.enabled) {
-      FocusManager.instance.primaryFocus
-          ?.unfocus(); // NEW: Fix keyboard behavior
+      FocusManager.instance.primaryFocus?.unfocus();
       _focusNode.requestFocus();
       _dropdownController.openDropdown();
     }
@@ -359,7 +415,6 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
   void _handleOutsideTap(PointerDownEvent event) {
     if (!_dropdownController.isOpen) return;
 
-    // NEW: Improved outside tap detection logic
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox != null && renderBox.attached) {
       final localPosition = renderBox.globalToLocal(event.position);
@@ -370,7 +425,6 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
 
   InputDecoration _buildDecoration() {
     final deco = widget.fieldDecoration;
-    // Support for the new inputDecoration base
     if (deco.inputDecoration != null) {
       return deco.inputDecoration!.copyWith(
         enabled: widget.enabled,
@@ -379,15 +433,12 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
     }
     return InputDecoration(
       isDense: false,
-      // Important: Do not change
       filled: true,
       floatingLabelBehavior: widget.floatingLabelBehavior,
       enabled: widget.enabled,
       labelText: deco.labelText,
       enabledBorder: deco.border,
-      // TODO deco.enabledBorder,
       focusedErrorBorder: deco.errorBorder,
-      // TODO deco.focusedErrorBorder,
       border: deco.border ?? const OutlineInputBorder(),
       focusedBorder: deco.focusedBorder,
       errorBorder: deco.errorBorder,
@@ -411,7 +462,6 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
 
   Widget _buildSelectedItems(List<DropdownItem<ITEM>> selectedOptions) {
     final chipDeco = widget.chipDecoration;
-    // Integrated with latest wrap/animation logic
     return Wrap(
       spacing: chipDeco.spacing,
       runSpacing: chipDeco.runSpacing,
@@ -439,7 +489,7 @@ class _FormBuilderMultiSelectChipFieldState<ITEM extends Object>
   @override
   void dispose() {
     _dropdownController.removeListener(_controllerListener);
-    _futureLoadingController.dispose(); // Add this line
+    _futureLoadingController.dispose();
     if (widget.controller == null) _dropdownController.dispose();
     super.dispose();
   }

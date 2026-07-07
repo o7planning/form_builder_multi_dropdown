@@ -1,6 +1,6 @@
 name: form_builder_multi_dropdown
 description: A highly customizable multi-selection dropdown field for Flutter FormBuilder. Supports responsive layouts, custom chip displays, and easy validation.
-version: 0.9.7
+version: 1.0.0
 resolution: workspace
 homepage: https://o7planning.github.io
 repository: https://github.com/o7planning/form_builder_multi_dropdown
